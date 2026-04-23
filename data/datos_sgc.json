@@ -1,0 +1,314 @@
+{
+  "nc": [
+    {
+      "id": "NC-2026-N01",
+      "tipo": "Proceso",
+      "gravedad": "Mayor",
+      "riesgo": "Alta",
+      "estado": "Abierta",
+      "sector": "Producción",
+      "fecha_in": "2026-01-03",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "NC-2026-N02",
+      "tipo": "Producto",
+      "gravedad": "Menor",
+      "riesgo": "Media",
+      "estado": "En análisis",
+      "sector": "Calidad",
+      "fecha_in": "2026-01-15",
+      "proyecto_asociado": "PRY-2026-N01"
+    },
+    {
+      "id": "NC-2026-N03",
+      "tipo": "Logística",
+      "gravedad": "Mayor",
+      "riesgo": "Alta",
+      "estado": "Cerrada",
+      "sector": "Logística",
+      "fecha_in": "2026-02-01",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "NC-2026-N04",
+      "tipo": "Sistema",
+      "gravedad": "Crítica",
+      "riesgo": "Alta",
+      "estado": "Abierta",
+      "sector": "IT",
+      "fecha_in": "2026-02-17",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "NC-2026-N05",
+      "tipo": "Proceso",
+      "gravedad": "Menor",
+      "riesgo": "Baja",
+      "estado": "Cerrada",
+      "sector": "Administración",
+      "fecha_in": "2026-02-25",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "NC-2026-N06",
+      "tipo": "Producto",
+      "gravedad": "Mayor",
+      "riesgo": "Media",
+      "estado": "En implementación",
+      "sector": "Producción",
+      "fecha_in": "2026-03-08",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "NC-2026-N07",
+      "tipo": "Sistema",
+      "gravedad": "Menor",
+      "riesgo": "Baja",
+      "estado": "Cerrada",
+      "sector": "Comercial",
+      "fecha_in": "2026-03-19",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "NC-2026-N08",
+      "tipo": "Logística",
+      "gravedad": "Crítica",
+      "riesgo": "Alta",
+      "estado": "Abierta",
+      "sector": "Logística",
+      "fecha_in": "2026-04-02",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "NC-2026-N8",
+      "tipo": "Proceso",
+      "gravedad": "Crítica",
+      "riesgo": "Alta",
+      "estado": "Abierta",
+      "sector": "Producción",
+      "fecha_in": "2026-04-22",
+      "proyecto_asociado": ""
+    }
+  ],
+  "qyr": [
+    {
+      "id": "QYR-2026-N01",
+      "cliente": "Fedea S.A [30-68514149-4]",
+      "producto": "20359 Fedea-1.2%",
+      "sector": "Logística",
+      "estado": "Cerrado",
+      "dias_res": 2,
+      "fecha_in": "2026-01-05"
+    },
+    {
+      "id": "QYR-2026-N02",
+      "cliente": "AgroNorte SRL [30-71112233-9]",
+      "producto": "Iniciador Bovino 18%",
+      "sector": "Comercial",
+      "estado": "Abierto",
+      "dias_res": 5,
+      "fecha_in": "2026-01-18"
+    },
+    {
+      "id": "QYR-2026-N03",
+      "cliente": "Coop. El Trigal [30-69887766-1]",
+      "producto": "Núcleo Lechero 4%",
+      "sector": "Producto",
+      "estado": "En seguimiento",
+      "dias_res": 7,
+      "fecha_in": "2026-02-02"
+    },
+    {
+      "id": "QYR-2026-N04",
+      "cliente": "Granja Los Pinos [30-70444999-7]",
+      "producto": "Premix Engorde 2%",
+      "sector": "Manejo",
+      "estado": "Cerrado",
+      "dias_res": 3,
+      "fecha_in": "2026-02-21"
+    },
+    {
+      "id": "QYR-2026-N05",
+      "cliente": "Campo Sur SA [30-68999444-2]",
+      "producto": "Fedea-1.2% - Adaptación",
+      "sector": "Logística",
+      "estado": "Abierto",
+      "dias_res": 6,
+      "fecha_in": "2026-03-04"
+    },
+    {
+      "id": "QYR-2026-N06",
+      "cliente": "Est. Don Emilio [20-22111999-0]",
+      "producto": "Concentrado Porcino 35%",
+      "sector": "Producto",
+      "estado": "Cerrado",
+      "dias_res": 4,
+      "fecha_in": "2026-03-12"
+    },
+    {
+      "id": "QYR-2026-N07",
+      "cliente": "BioFeed SAS [30-73335555-8]",
+      "producto": "Mineral Ovino Plus",
+      "sector": "Comercial",
+      "estado": "En seguimiento",
+      "dias_res": 8,
+      "fecha_in": "2026-03-29"
+    },
+    {
+      "id": "QYR-2026-N08",
+      "cliente": "Fedea S.A [30-68514149-4]",
+      "producto": "20359 Fedea-1.2%",
+      "sector": "Logística",
+      "estado": "Cerrado",
+      "dias_res": 2,
+      "fecha_in": "2026-04-06"
+    }
+  ],
+  "om": [
+    {
+      "id": "OM-2026-N01",
+      "sector": "Producción",
+      "oportunidad": "Estandarizar checklist de arranque de línea",
+      "estado": "En Implementación",
+      "responsable": "Tercero Kanofer",
+      "fecha_in": "2026-01-07",
+      "proyecto_asociado": "PRY-2026-N02"
+    },
+    {
+      "id": "OM-2026-N02",
+      "sector": "Comercial",
+      "oportunidad": "Plantilla única para respuesta a reclamos frecuentes",
+      "estado": "Nuevo",
+      "responsable": "Laura M.",
+      "fecha_in": "2026-01-22",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "OM-2026-N03",
+      "sector": "Logística",
+      "oportunidad": "Trazabilidad por QR en despacho y recepción",
+      "estado": "En Implementación",
+      "responsable": "Javier R.",
+      "fecha_in": "2026-02-06",
+      "proyecto_asociado": "PRY-2026-N03"
+    },
+    {
+      "id": "OM-2026-N04",
+      "sector": "Administración",
+      "oportunidad": "Digitalización de firmas de conformidad",
+      "estado": "Cerrado",
+      "responsable": "Paula G.",
+      "fecha_in": "2026-02-20",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "OM-2026-N05",
+      "sector": "IT",
+      "oportunidad": "Alertas automáticas por desvío de KPI crítico",
+      "estado": "Nuevo",
+      "responsable": "Dario (IT)",
+      "fecha_in": "2026-03-03",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "OM-2026-N06",
+      "sector": "Producción",
+      "oportunidad": "Tablero visual de mermas por turno",
+      "estado": "Cerrado",
+      "responsable": "Miguel T.",
+      "fecha_in": "2026-03-14",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "OM-2026-N07",
+      "sector": "Comercial",
+      "oportunidad": "Encuesta post-entrega para clientes clave",
+      "estado": "En Implementación",
+      "responsable": "Carla P.",
+      "fecha_in": "2026-03-30",
+      "proyecto_asociado": ""
+    },
+    {
+      "id": "OM-2026-N08",
+      "sector": "Logística",
+      "oportunidad": "Control preventivo de estiba en ruta larga",
+      "estado": "Nuevo",
+      "responsable": "Ramiro V.",
+      "fecha_in": "2026-04-05",
+      "proyecto_asociado": ""
+    }
+  ],
+  "proyectos": [
+    {
+      "id": "PRY-2026-N01",
+      "nombre": "Plan de mejoras proveedor logístico",
+      "prioridad": "Alta",
+      "area": "Logística",
+      "proveedor": "Transporte Ruta Sur",
+      "fecha_inicio": "2026-01-20",
+      "dias_ejecucion": 30,
+      "fecha_fin": "2026-02-19",
+      "responsable": "Laura M.",
+      "estado": "En curso",
+      "seguimiento": "Relevar desvíos actuales\nCoordinar reunión con proveedor\nImplementar plan piloto",
+      "origen_tipo": "No Conformidad",
+      "origen_id": "NC-2026-N02"
+    },
+    {
+      "id": "PRY-2026-N02",
+      "nombre": "Checklist digital de arranque",
+      "prioridad": "Media",
+      "area": "Producción",
+      "proveedor": "Kanofer",
+      "fecha_inicio": "2026-01-10",
+      "dias_ejecucion": 45,
+      "fecha_fin": "2026-02-24",
+      "responsable": "Tercero Kanofer",
+      "estado": "Finalizado",
+      "seguimiento": "Definir formato\nCapacitar supervisores\nLiberar versión final",
+      "origen_tipo": "Oportunidad de Mejora",
+      "origen_id": "OM-2026-N01"
+    },
+    {
+      "id": "PRY-2026-N03",
+      "nombre": "Trazabilidad QR en logística",
+      "prioridad": "Alta",
+      "area": "Logística",
+      "proveedor": "QR Solutions",
+      "fecha_inicio": "2026-02-08",
+      "dias_ejecucion": 60,
+      "fecha_fin": "2026-04-09",
+      "responsable": "Javier R.",
+      "estado": "En curso",
+      "seguimiento": "Seleccionar proveedor\nConfigurar puntos de lectura\nPrueba en despacho",
+      "origen_tipo": "Oportunidad de Mejora",
+      "origen_id": "OM-2026-N03"
+    },
+    {
+      "id": "PRY-2026-N04",
+      "nombre": "Proyecto independiente de tablero de indicadores",
+      "prioridad": "Baja",
+      "area": "IT",
+      "proveedor": "Interno",
+      "fecha_inicio": "2026-04-01",
+      "dias_ejecucion": 20,
+      "fecha_fin": "2026-04-21",
+      "responsable": "Dario (IT)",
+      "estado": "Por hacer",
+      "seguimiento": "Definir KPIs\nDiseñar vistas\nValidar con gerencia",
+      "origen_tipo": "Independiente",
+      "origen_id": ""
+    }
+  ],
+  "responsables": [
+    "Tercero Kanofer",
+    "Laura M.",
+    "Javier R.",
+    "Paula G.",
+    "Dario (IT)",
+    "Miguel T.",
+    "Carla P.",
+    "Ramiro V."
+  ]
+}
