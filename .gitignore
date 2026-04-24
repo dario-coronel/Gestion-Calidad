@@ -18,3 +18,12 @@ dist/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Django
+.env
+db.sqlite3
+staticfiles/
+media/
+
+# Streamlit
+.streamlit/

@@ -1,6 +1,22 @@
+# ─── Backend ───────────────────────────────────────────────
+Django==6.0.4
+django-environ==0.13.0
+django-htmx==1.27.0
+whitenoise==6.12.0
+
+# ─── Exportaciones ─────────────────────────────────────────
+weasyprint==68.1
+openpyxl==3.1.5
+
+# ─── Gráficos ──────────────────────────────────────────────
+plotly==6.7.0
+
+# ─── Utilidades ────────────────────────────────────────────
+pillow==12.2.0
+
+# ─── Dev / Demo (Streamlit — mantener hasta migración completa) ──
 streamlit
 pandas
-plotly
 reportlab
 kaleido
 xlsxwriter
