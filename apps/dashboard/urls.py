@@ -4,5 +4,5 @@ from . import views
 app_name = 'dashboard'
 
 urlpatterns = [
-    # URLs del modulo dashboard
+    path('', views.index, name='index'),
 ]

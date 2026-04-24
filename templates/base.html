@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SGC — Gestión de Calidad{% endblock %}</title>
+
+  <!-- Tailwind CSS (CDN dev — reemplazar por build en producción) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary:  { DEFAULT: '#0f766e', hover: '#0d9488', light: '#ccfbf1' },
+            danger:   { DEFAULT: '#dc2626', light: '#fee2e2' },
+            warning:  { DEFAULT: '#d97706', light: '#fef3c7' },
+            success:  { DEFAULT: '#16a34a', light: '#dcfce7' },
+            sidebar:  '#0f2027',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="h-full flex" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+  {# ── SIDEBAR ──────────────────────────────────────────────── #}
+  <aside class="w-56 min-h-screen flex flex-col bg-sidebar text-white shrink-0">
+
+    {# Logo / título #}
+    <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+      <svg class="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <div class="leading-tight">
+        <p class="text-xs font-semibold text-primary uppercase tracking-widest">SGC</p>
+        <p class="text-xs text-white/60">Gestión de Calidad</p>
+      </div>
+    </div>
+
+    {# Navegación #}
+    <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
+      {% with request.resolver_match.app_name as active_app %}
+
+      <a href="{% url 'dashboard:index' %}"
+         class="nav-link {% if active_app == 'dashboard' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Dashboard
+      </a>
+
+      <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Gestión</p>
+
+      <a href="{% url 'nc:lista' %}"
+         class="nav-link {% if active_app == 'nc' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        No Conformidades
+      </a>
+
+      <a href="{% url 'qr:lista' %}"
+         class="nav-link {% if active_app == 'qr' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"/></svg>
+        Quejas y Reclamos
+      </a>
+
+      <a href="{% url 'om:lista' %}"
+         class="nav-link {% if active_app == 'om' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Mejoras (OM)
+      </a>
+
+      <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Proyectos</p>
+
+      <a href="{% url 'proyectos:lista' %}"
+         class="nav-link {% if active_app == 'proyectos' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Proyectos
+      </a>
+
+      <a href="{% url 'verificacion:lista' %}"
+         class="nav-link {% if active_app == 'verificacion' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Verif. Eficacia
+      </a>
+
+      <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Reportes</p>
+
+      <a href="{% url 'reportes:index' %}"
+         class="nav-link {% if active_app == 'reportes' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Informes
+      </a>
+
+      {% endwith %}
+    </nav>
+
+    {# Usuario #}
+    <div class="px-4 py-4 border-t border-white/10 text-xs text-white/60">
+      <p class="font-medium text-white truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
+      <p class="truncate">{{ request.user.get_rol_display }}</p>
+      <a href="{% url 'accounts:logout' %}" class="mt-2 inline-block text-white/40 hover:text-white transition-colors">Cerrar sesión →</a>
+    </div>
+  </aside>
+
+  {# ── CONTENIDO PRINCIPAL ───────────────────────────────────── #}
+  <div class="flex-1 flex flex-col min-h-screen overflow-auto">
+
+    {# Topbar #}
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center justify-between px-6 py-3">
+      <h1 class="text-base font-semibold text-gray-800">{% block page_title %}{% endblock %}</h1>
+
+      <div class="flex items-center gap-4">
+        {# Campana de notificaciones #}
+        <div class="relative" id="notif-widget">
+          <button hx-get="{% url 'notificaciones:panel' %}"
+                  hx-target="#notif-dropdown"
+                  hx-swap="innerHTML"
+                  class="relative p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            {% if notif_no_leidas %}
+            <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              {{ notif_no_leidas }}
+            </span>
+            {% endif %}
+          </button>
+          <div id="notif-dropdown"
+               class="absolute right-0 mt-1 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 hidden">
+          </div>
+        </div>
+
+        {# Chip usuario #}
+        <div class="flex items-center gap-2 text-sm text-gray-700">
+          <div class="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold uppercase">
+            {{ request.user.username|slice:":1" }}
+          </div>
+          <span class="hidden sm:block font-medium">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+      </div>
+    </header>
+
+    {# Mensajes flash #}
+    {% if messages %}
+    <div class="px-6 pt-4 space-y-2">
+      {% for msg in messages %}
+      <div class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
+        {% if msg.tags == 'success' %}bg-success/10 text-success border border-success/20
+        {% elif msg.tags == 'error' %}bg-danger/10 text-danger border border-danger/20
+        {% elif msg.tags == 'warning' %}bg-warning/10 text-warning border border-warning/20
+        {% else %}bg-gray-100 text-gray-700{% endif %}">
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Contenido de la página #}
+    <main class="flex-1 px-6 py-6">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {# ── ESTILOS UTILITARIOS ───────────────────────────────────── #}
+  <style>
+    .nav-link { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.15s; font-size: 0.8125rem; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: #0f766e; color: white; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: background-color 0.15s; }
+    .btn-primary:hover { background-color: #0d9488; }
+    .btn-secondary { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: white; color: #374151; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: background-color 0.15s; }
+    .btn-secondary:hover { background-color: #f9fafb; }
+    .btn-danger { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: #dc2626; color: white; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; }
+    .form-input { display: block; width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; color: #111827; background-color: white; transition: border-color 0.15s, box-shadow 0.15s; }
+    .form-input:focus { outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,0.12); }
+    .form-label { display: block; font-size: 0.8125rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem; }
+    .card { background-color: white; border-radius: 0.75rem; border: 1px solid #e5e7eb; padding: 1.25rem; }
+  </style>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

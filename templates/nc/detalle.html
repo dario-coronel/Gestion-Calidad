@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% load nc_tags %}
+
+{% block title %}{{ nc.folio }} — SGC{% endblock %}
+{% block page_title %}{{ nc.folio }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div class="flex items-center gap-3">
+    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold {{ color_estado }}">
+      {{ nc.get_estado_display }}
+    </span>
+    {% if nc.riesgo_calculado %}
+    <span class="text-sm font-bold {{ color_riesgo }}">
+      Riesgo: {{ nc.riesgo_calculado }}
+    </span>
+    {% endif %}
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'nc:editar' nc.pk %}" class="btn-secondary text-xs">Editar</a>
+    {% if puede_cambiar_estado %}
+    <form method="post" class="inline">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="cambiar_estado">
+      <select name="nuevo_estado" onchange="this.form.submit()" class="form-input text-xs py-1">
+        {% for val, label in estados %}
+        <option value="{{ val }}" {% if nc.estado == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+  {# ── COLUMNA IZQUIERDA: Datos de la NC ── #}
+  <div class="lg:col-span-2 space-y-5">
+
+    {# Datos principales #}
+    <div class="card">
+      <h2 class="text-sm font-semibold text-gray-700 mb-4">Datos de la No Conformidad</h2>
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Folio</dt><dd class="font-mono font-bold">{{ nc.folio }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Fecha</dt><dd>{{ nc.fecha|date:"d/m/Y" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Área</dt><dd>{{ nc.area }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Responsable</dt><dd>{{ nc.responsable.get_full_name|default:nc.responsable.username }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">ID Muestra / Lote</dt><dd>{{ nc.id_muestra_lote|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Parámetro</dt><dd>{{ nc.parametro_afectado|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Clasificación</dt><dd>{{ nc.get_clasificacion_display }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Prioridad</dt><dd>{{ nc.get_prioridad_display }}</dd></div>
+        <div class="col-span-2"><dt class="text-gray-400 text-xs uppercase tracking-wide mb-1">Descripción</dt><dd class="text-gray-700 leading-relaxed">{{ nc.descripcion }}</dd></div>
+      </dl>
+    </div>
+
+    {# ── ANÁLISIS 5 PORQUÉS ── #}
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold text-gray-700">Análisis 5 Porqués (Causa Raíz)</h2>
+        {% if cinco_p.completo %}
+        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">Completo</span>
+        {% else %}
+        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">Incompleto</span>
+        {% endif %}
+      </div>
+
+      {% if cinco_form %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="guardar_5p">
+
+        <div class="space-y-4">
+          {% for etapa, label in etapas %}
+          <div class="relative pl-6 pb-4 {% if not forloop.last %}border-l-2 border-gray-200{% endif %}">
+            <div class="absolute -left-2.5 top-0 w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
+              {{ forloop.counter }}
+            </div>
+            <label class="form-label">{{ label }}</label>
+            {{ cinco_form|get_form_field:etapa }}
+          </div>
+          {% endfor %}
+
+          <div>
+            <label class="form-label text-primary font-semibold">Acción Correctiva</label>
+            {{ cinco_form.accion_correctiva }}
+          </div>
+        </div>
+
+        <div class="mt-5 flex gap-3">
+          <button type="submit" class="btn-primary text-xs">Guardar análisis</button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+
+    {# Proyecto vinculado #}
+    {% if nc.proyecto %}
+    <div class="card bg-primary/5 border-primary/20">
+      <h2 class="text-sm font-semibold text-primary mb-2">Proyecto vinculado</h2>
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="font-mono text-sm font-bold text-gray-800">{{ nc.proyecto.folio }}</p>
+          <p class="text-sm text-gray-700">{{ nc.proyecto.nombre }}</p>
+          <p class="text-xs text-gray-500 mt-1">Estado: {{ nc.proyecto.get_estado_display }} · {{ nc.proyecto.porcentaje_avance }}% avance</p>
+        </div>
+        <a href="{% url 'proyectos:detalle' nc.proyecto.pk %}" class="btn-secondary text-xs">Ver proyecto →</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── COLUMNA DERECHA: Riesgo + Adjuntos + Auditoría ── #}
+  <div class="space-y-5">
+
+    {# Matriz de Riesgo #}
+    <div class="card">
+      <h2 class="text-sm font-semibold text-gray-700 mb-4">Matriz de Riesgo</h2>
+
+      {% if nc.probabilidad and nc.impacto %}
+      {# Visualización de la matriz 5x5 #}
+      <div class="mb-4 overflow-auto">
+        <table class="mx-auto text-[10px] font-mono select-none">
+          <tbody>
+            {% for prob in "54321" %}
+            <tr>
+              {% for imp in "12345" %}
+              {% with p=prob|add:0 i=imp|add:0 %}
+              <td class="w-7 h-7 text-center font-bold rounded
+                {# Colorear por zona de riesgo #}
+                {% with val=prob|add:""  %}
+                {% if prob == '5' %}
+                  {% if imp == '1' %}bg-yellow-300{% elif imp == '2' %}bg-orange-400 text-white{% else %}bg-red-600 text-white{% endif %}
+                {% elif prob == '4' %}
+                  {% if imp == '1' %}bg-green-300{% elif imp == '2' %}bg-yellow-300{% elif imp == '3' %}bg-orange-400 text-white{% else %}bg-red-500 text-white{% endif %}
+                {% elif prob == '3' %}
+                  {% if imp <= '2' %}bg-green-200{% elif imp == '3' %}bg-yellow-200{% else %}bg-orange-300{% endif %}
+                {% elif prob == '2' %}
+                  {% if imp <= '3' %}bg-green-100{% else %}bg-yellow-200{% endif %}
+                {% else %}
+                  bg-green-50
+                {% endif %}
+                {% endwith %}
+                {% if prob == nc.probabilidad|stringformat:"s" and imp == nc.impacto|stringformat:"s" %}ring-2 ring-gray-800{% endif %}
+              ">
+                {{ prob|add:"0"|add:imp }}
+              </td>
+              {% endwith %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="text-center text-xs text-gray-400 mt-1">Probabilidad × Impacto</p>
+      </div>
+      <p class="text-center text-sm">
+        <span class="{{ color_riesgo }} font-bold text-lg">{{ nc.riesgo_calculado }}</span>
+        <br><span class="text-xs text-gray-500">P={{ nc.probabilidad }} × I={{ nc.impacto }}</span>
+      </p>
+      {% else %}
+      <p class="text-sm text-gray-400 text-center py-4">Sin evaluación de riesgo</p>
+      {% endif %}
+
+      {% if puede_editar_riesgo %}
+      <form method="post" class="mt-4 pt-4 border-t border-gray-100" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="guardar_riesgo">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">Probabilidad (1-5)</label>
+            {{ matriz_form.probabilidad }}
+          </div>
+          <div>
+            <label class="form-label">Impacto (1-5)</label>
+            {{ matriz_form.impacto }}
+          </div>
+        </div>
+        <button type="submit" class="mt-3 btn-primary text-xs w-full justify-center">Actualizar</button>
+      </form>
+      {% endif %}
+    </div>
+
+    {# Adjuntos #}
+    {% if nc.adjuntos.exists %}
+    <div class="card">
+      <h2 class="text-sm font-semibold text-gray-700 mb-3">Adjuntos</h2>
+      <ul class="space-y-2">
+        {% for adj in nc.adjuntos.all %}
+        <li class="flex items-center gap-2 text-sm">
+          <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+          <a href="{{ adj.archivo.url }}" target="_blank" class="text-primary hover:underline truncate">{{ adj.nombre }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {# Auditoría #}
+    <div class="card">
+      <h2 class="text-sm font-semibold text-gray-700 mb-3">Auditoría</h2>
+      <dl class="space-y-2 text-xs text-gray-500">
+        <div><dt class="font-medium text-gray-600">Creado por</dt><dd>{{ nc.creado_por.get_full_name|default:nc.creado_por.username|default:"—" }}</dd></div>
+        <div><dt class="font-medium text-gray-600">Creado el</dt><dd>{{ nc.creado_en|date:"d/m/Y H:i" }}</dd></div>
+        <div><dt class="font-medium text-gray-600">Última modificación</dt><dd>{{ nc.actualizado_en|date:"d/m/Y H:i" }}</dd></div>
+        {% if nc.actualizado_por %}<div><dt class="font-medium text-gray-600">Modificado por</dt><dd>{{ nc.actualizado_por.get_full_name|default:nc.actualizado_por.username }}</dd></div>{% endif %}
+      </dl>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

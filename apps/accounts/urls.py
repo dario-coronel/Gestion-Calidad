@@ -1,8 +1,9 @@
 ﻿from django.urls import path
-from . import views
+from .views import SGCLoginView, SGCLogoutView
 
 app_name = 'accounts'
 
 urlpatterns = [
-    # URLs del modulo accounts
+    path('login/', SGCLoginView.as_view(), name='login'),
+    path('logout/', SGCLogoutView.as_view(), name='logout'),
 ]

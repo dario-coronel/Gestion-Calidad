@@ -4,5 +4,5 @@ from . import views
 app_name = 'qr'
 
 urlpatterns = [
-    # URLs del modulo qr
+    path('', views.lista, name='lista'),
 ]

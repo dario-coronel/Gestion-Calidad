@@ -4,5 +4,5 @@ from . import views
 app_name = 'reportes'
 
 urlpatterns = [
-    # URLs del modulo reportes
+    path('', views.lista, name='index'),
 ]

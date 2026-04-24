@@ -1,0 +1,25 @@
+{# Panel de notificaciones — respuesta HTMX del botón campana #}
+{% if notifs %}
+<div class="divide-y divide-gray-100">
+  {% for n in notifs %}
+  <a href="{{ n.url_destino|default:'#' }}"
+     class="flex gap-3 px-4 py-3 hover:bg-gray-50 transition-colors {% if not n.leida %}bg-primary/5{% endif %}">
+    <div class="shrink-0 mt-0.5">
+      {% if not n.leida %}
+      <span class="inline-block w-2 h-2 rounded-full bg-primary"></span>
+      {% else %}
+      <span class="inline-block w-2 h-2 rounded-full bg-gray-200"></span>
+      {% endif %}
+    </div>
+    <div class="min-w-0">
+      <p class="text-xs text-gray-700 leading-snug">{{ n.mensaje }}</p>
+      <p class="text-[10px] text-gray-400 mt-0.5">{{ n.creada_en|timesince }} atrás</p>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="px-4 py-8 text-center">
+  <p class="text-sm text-gray-400">Sin notificaciones nuevas</p>
+</div>
+{% endif %}

@@ -4,5 +4,5 @@ from . import views
 app_name = 'om'
 
 urlpatterns = [
-    # URLs del modulo om
+    path('', views.lista, name='lista'),
 ]

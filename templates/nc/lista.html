@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}No Conformidades — SGC{% endblock %}
+{% block page_title %}No Conformidades{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <p class="text-sm text-gray-500">Registro y seguimiento de No Conformidades del sistema.</p>
+  </div>
+  <a href="{% url 'nc:crear' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Nueva NC
+  </a>
+</div>
+
+{# ── FILTROS ──────────────────────────────────────────────────── #}
+<div class="card mb-5">
+  <form id="filtros-form"
+        hx-get="{% url 'nc:lista' %}"
+        hx-target="#tabla-nc"
+        hx-trigger="change, keyup changed delay:400ms"
+        hx-push-url="true"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+    <div>
+      <label class="form-label">Buscar</label>
+      <input type="text" name="q" value="{{ filtros.q }}"
+             class="form-input" placeholder="Folio o descripción...">
+    </div>
+
+    <div>
+      <label class="form-label">Estado</label>
+      <select name="estado" class="form-input">
+        <option value="">Todos</option>
+        {% for val, label in estados %}
+        <option value="{{ val }}" {% if filtros.estado == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label">Prioridad</label>
+      <select name="prioridad" class="form-input">
+        <option value="">Todas</option>
+        {% for val, label in prioridades %}
+        <option value="{{ val }}" {% if filtros.prioridad == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label">Área</label>
+      <input type="text" name="area" value="{{ filtros.area }}"
+             class="form-input" placeholder="Filtrar por área...">
+    </div>
+  </form>
+</div>
+
+{# ── TABLA ────────────────────────────────────────────────────── #}
+<div id="tabla-nc">
+  {% include "nc/partials/tabla_nc.html" %}
+</div>
+{% endblock %}

@@ -4,5 +4,5 @@ from . import views
 app_name = 'notificaciones'
 
 urlpatterns = [
-    # URLs del modulo notificaciones
+    path('panel/', views.panel, name='panel'),
 ]
