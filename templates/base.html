@@ -122,16 +122,20 @@
       <div class="flex items-center gap-4">
         {# Campana de notificaciones #}
         <div class="relative" id="notif-widget">
-          <button hx-get="{% url 'notificaciones:panel' %}"
+          <button id="notif-btn"
+                  hx-get="{% url 'notificaciones:panel' %}"
                   hx-target="#notif-dropdown"
                   hx-swap="innerHTML"
+                  hx-trigger="click[!htmx.find('#notif-dropdown').classList.contains('notif-loaded')]"
+                  onclick="toggleNotifDropdown(event)"
                   class="relative p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
             </svg>
             {% if notif_no_leidas %}
-            <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span id="notif-badge"
+                  class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
               {{ notif_no_leidas }}
             </span>
             {% endif %}
@@ -185,6 +189,38 @@
     .form-label { display: block; font-size: 0.8125rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem; }
     .card { background-color: white; border-radius: 0.75rem; border: 1px solid #e5e7eb; padding: 1.25rem; }
   </style>
+
+  <script>
+    // ---- Dropdown campana de notificaciones ----
+    function toggleNotifDropdown(e) {
+      const dropdown = document.getElementById('notif-dropdown');
+      const isHidden = dropdown.classList.contains('hidden');
+      if (isHidden) {
+        dropdown.classList.remove('hidden');
+        dropdown.classList.add('notif-loaded');
+      } else {
+        dropdown.classList.add('hidden');
+        dropdown.classList.remove('notif-loaded');
+      }
+    }
+
+    // Cerrar al hacer clic fuera del widget
+    document.addEventListener('click', function(e) {
+      const widget = document.getElementById('notif-widget');
+      const dropdown = document.getElementById('notif-dropdown');
+      if (widget && dropdown && !widget.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    // Tras HTMX swap, marcar como loaded para no recargar en el siguiente clic
+    document.addEventListener('htmx:afterSwap', function(e) {
+      if (e.detail.target && e.detail.target.id === 'notif-dropdown') {
+        e.detail.target.classList.remove('hidden');
+        e.detail.target.classList.add('notif-loaded');
+      }
+    });
+  </script>
 
   {% block extra_js %}{% endblock %}
 </body>

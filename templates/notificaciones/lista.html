@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Notificaciones — SGC{% endblock %}
+{% block page_title %}Notificaciones{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-3">
+
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-gray-500">
+      {% with total=page_obj.paginator.count %}
+      {{ total }} notificación{{ total|pluralize:"es" }} en total
+      {% endwith %}
+    </p>
+    {% with no_leidas=page_obj.object_list %}
+    <form method="post" action="{% url 'notificaciones:marcar_todas' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary text-sm">Marcar todas como leídas</button>
+    </form>
+    {% endwith %}
+  </div>
+
+  {% if page_obj.object_list %}
+  <div class="card overflow-hidden p-0 divide-y divide-gray-100">
+    {% for n in page_obj %}
+    {% include "notificaciones/partials/item_notif.html" %}
+    {% endfor %}
+  </div>
+
+  {# Paginación #}
+  {% if page_obj.has_other_pages %}
+  <div class="flex items-center justify-center gap-2 pt-2">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="btn-secondary text-xs px-3 py-1.5">← Anterior</a>
+    {% endif %}
+    <span class="text-xs text-gray-500">
+      Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="btn-secondary text-xs px-3 py-1.5">Siguiente →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="card text-center py-16">
+    <svg class="w-10 h-10 mx-auto mb-3 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+    </svg>
+    <p class="text-sm text-gray-400">No tenés notificaciones.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
