@@ -155,19 +155,20 @@
       </div>
     </header>
 
-    {# Mensajes flash #}
+    {# Toast container — mensajes flash flotantes #}
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
+
     {% if messages %}
-    <div class="px-6 pt-4 space-y-2">
-      {% for msg in messages %}
-      <div class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
-        {% if msg.tags == 'success' %}bg-success/10 text-success border border-success/20
-        {% elif msg.tags == 'error' %}bg-danger/10 text-danger border border-danger/20
-        {% elif msg.tags == 'warning' %}bg-warning/10 text-warning border border-warning/20
-        {% else %}bg-gray-100 text-gray-700{% endif %}">
-        {{ msg }}
-      </div>
-      {% endfor %}
-    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var _msgs = [
+          {% for msg in messages %}
+          { text: "{{ msg.message|escapejs }}", level: "{{ msg.tags }}" }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ];
+        _msgs.forEach(function(m) { showToast(m.text, m.level); });
+      });
+    </script>
     {% endif %}
 
     {# Contenido de la página #}
@@ -188,9 +189,41 @@
     .form-input:focus { outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,0.12); }
     .form-label { display: block; font-size: 0.8125rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem; }
     .card { background-color: white; border-radius: 0.75rem; border: 1px solid #e5e7eb; padding: 1.25rem; }
+    @keyframes toast-in  { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(12px); } }
+    .toast-item { animation: toast-in 0.25s ease forwards; }
+    .toast-item.hiding { animation: toast-out 0.25s ease forwards; }
   </style>
 
   <script>
+    // ---- Toasts ----
+    function showToast(text, level) {
+      var colors = {
+        success: { bg: '#f0fdf4', border: '#86efac', text: '#166534', icon: '✓' },
+        error:   { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b', icon: '✕' },
+        warning: { bg: '#fffbeb', border: '#fcd34d', text: '#92400e', icon: '⚠' },
+        info:    { bg: '#eff6ff', border: '#93c5fd', text: '#1e40af', icon: 'ℹ' },
+      };
+      var c = colors[level] || colors['info'];
+      var t = document.createElement('div');
+      t.className = 'toast-item pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium max-w-sm w-full';
+      t.style.cssText = 'background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.text;
+      t.innerHTML = '<span style="font-size:1rem;flex-shrink:0;">' + c.icon + '</span>' +
+                    '<span style="flex:1;line-height:1.4">' + text + '</span>' +
+                    '<button onclick="dismissToast(this.parentElement)" style="flex-shrink:0;opacity:.6;font-size:1rem;line-height:1;background:none;border:none;cursor:pointer;color:inherit;">×</button>';
+      document.getElementById('toast-container').appendChild(t);
+      setTimeout(function() { dismissToast(t); }, 4500);
+    }
+    function dismissToast(t) {
+      if (!t || t.classList.contains('hiding')) return;
+      t.classList.add('hiding');
+      setTimeout(function() { t && t.remove(); }, 250);
+    }
+    // Toasts disparados por HTMX (header HX-Trigger: {"showToast":{"message":"...","level":"success"}})
+    document.addEventListener('showToast', function(e) {
+      showToast(e.detail.message, e.detail.level || 'info');
+    });
+
     // ---- Dropdown campana de notificaciones ----
     function toggleNotifDropdown(e) {
       const dropdown = document.getElementById('notif-dropdown');

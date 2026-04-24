@@ -1,4 +1,5 @@
-﻿from django.contrib.auth.decorators import login_required
+﻿import json
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -37,10 +38,10 @@ def marcar_leida(request, pk):
     notif.marcar_leida()
 
     if request.htmx:
-        # Devuelve el item actualizado (ya leído) sin recargar
-        return render(request, 'notificaciones/partials/item_notif.html', {'n': notif})
+        resp = render(request, 'notificaciones/partials/item_notif.html', {'n': notif})
+        resp['HX-Trigger'] = json.dumps({'showToast': {'message': 'Notificación marcada como leída', 'level': 'success'}})
+        return resp
 
-    url = notif.url_destino or 'notificaciones:lista'
     if notif.url_destino:
         return redirect(notif.url_destino)
     return redirect('notificaciones:lista')
@@ -54,5 +55,7 @@ def marcar_todas(request):
         leida_en=timezone.now(),
     )
     if request.htmx:
-        return render(request, 'notificaciones/partials/campana.html', {'notifs': []})
+        resp = render(request, 'notificaciones/partials/campana.html', {'notifs': []})
+        resp['HX-Trigger'] = json.dumps({'showToast': {'message': 'Todas las notificaciones marcadas como leídas', 'level': 'success'}})
+        return resp
     return redirect('notificaciones:lista')
