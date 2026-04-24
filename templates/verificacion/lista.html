@@ -1,6 +1,64 @@
 ﻿{% extends "base.html" %}
+
 {% block title %}Verificación de Eficacia — SGC{% endblock %}
 {% block page_title %}Verificación de Eficacia{% endblock %}
+
 {% block content %}
-<div class="card py-16 text-center"><p class="text-gray-400 text-sm">Módulo en construcción.</p></div>
+<div class="flex items-center justify-between mb-5">
+  <form class="flex gap-2" method="get">
+    <select name="estado" class="form-input text-sm py-1.5" onchange="this.form.submit()">
+      <option value="">Todos los estados</option>
+      {% for val, label in estados %}
+      <option value="{{ val }}" {% if filtros.estado == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if verificaciones %}
+<div class="card overflow-hidden p-0">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Proyecto</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Responsable</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Fecha Objetivo</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Días</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for v in verificaciones %}
+      <tr class="hover:bg-gray-50 {% if v.vencida %}bg-red-50{% endif %}">
+        <td class="px-4 py-3 font-mono font-semibold">{{ v.proyecto.folio }}</td>
+        <td class="px-4 py-3">{{ v.responsable.get_full_name|default:v.responsable.username|default:"—" }}</td>
+        <td class="px-4 py-3">{{ v.fecha_objetivo|date:"d/m/Y" }}</td>
+        <td class="px-4 py-3">
+          <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+            {% if v.estado == 'eficaz' %}bg-green-100 text-green-700
+            {% elif v.estado == 'no_eficaz' %}bg-red-100 text-red-700
+            {% elif v.estado == 'en_revision' %}bg-blue-50 text-blue-700
+            {% else %}bg-yellow-50 text-yellow-700{% endif %}">
+            {{ v.get_estado_display }}
+          </span>
+        </td>
+        <td class="px-4 py-3">
+          {% if v.vencida %}
+          <span class="text-xs font-bold text-red-600">Vencida</span>
+          {% else %}
+          <span class="text-xs text-gray-500">{{ v.dias_restantes }} días</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3"><a href="{% url 'verificacion:detalle' v.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card text-center py-16">
+  <p class="text-sm text-gray-400">No hay verificaciones registradas aún. Se crean automáticamente al finalizar un proyecto.</p>
+</div>
+{% endif %}
 {% endblock %}

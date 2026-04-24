@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ om.folio }} — SGC{% endblock %}
+{% block page_title %}{{ om.folio }}{% endblock %}
+
+{% block content %}
+<div class="flex items-start gap-6">
+
+  <!-- Columna principal -->
+  <div class="flex-1 space-y-5">
+
+    <div class="card space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-800">Oportunidad de Mejora</h2>
+        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold {{ color_estado }}">
+          {{ om.get_estado_display }}
+        </span>
+      </div>
+
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div>
+          <dt class="form-label mb-0.5">Clasificación</dt>
+          <dd class="text-gray-800">{{ om.get_clasificacion_display }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Sector</dt>
+          <dd class="text-gray-800">{{ om.sector|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Fecha</dt>
+          <dd class="text-gray-800">{{ om.fecha|date:"d/m/Y" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Responsable</dt>
+          <dd class="text-gray-800">{{ om.responsable.get_full_name|default:om.responsable.username|default:"Sin asignar" }}</dd>
+        </div>
+      </dl>
+
+      <div>
+        <dt class="form-label mb-0.5">Descripción</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line">{{ om.descripcion }}</dd>
+      </div>
+
+      {% if om.beneficio_potencial %}
+      <div>
+        <dt class="form-label mb-0.5">Beneficio potencial</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line">{{ om.beneficio_potencial }}</dd>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Proyecto vinculado -->
+    {% if om.proyectos.exists %}
+    <div class="card">
+      <h3 class="text-sm font-semibold mb-2">Proyecto vinculado</h3>
+      {% for p in om.proyectos.all %}
+      <a href="{% url 'proyectos:detalle' p.pk %}" class="text-teal-700 hover:underline text-sm font-mono">{{ p.folio }} — {{ p.nombre }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Sidebar -->
+  <div class="w-60 space-y-4 flex-shrink-0">
+
+    <div class="card space-y-3">
+      <h3 class="text-sm font-semibold">Acciones</h3>
+      {% if puede_gestionar %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="cambiar_estado">
+        <select name="nuevo_estado" class="form-input text-sm mb-2">
+          {% for val, label in estados %}
+          <option value="{{ val }}" {% if om.estado == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-primary w-full text-sm">Cambiar estado</button>
+      </form>
+      <a href="{% url 'om:editar' om.pk %}" class="btn-secondary w-full text-sm text-center block">Editar</a>
+      {% endif %}
+    </div>
+
+    <div class="card text-xs text-gray-400 space-y-1">
+      <p>Creado: {{ om.creado_en|date:"d/m/Y H:i" }}</p>
+      {% if om.creado_por %}
+      <p>Por: {{ om.creado_por.get_full_name|default:om.creado_por.username }}</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

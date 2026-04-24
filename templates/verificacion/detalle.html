@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Verificación {{ ver.proyecto.folio }} — SGC{% endblock %}
+{% block page_title %}Verificación — {{ ver.proyecto.folio }}{% endblock %}
+
+{% block content %}
+<div class="flex items-start gap-6">
+
+  <!-- Columna principal -->
+  <div class="flex-1 space-y-5">
+
+    <!-- Info del proyecto -->
+    <div class="card space-y-3">
+      <h2 class="text-base font-semibold text-gray-800">Proyecto</h2>
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div>
+          <dt class="form-label mb-0.5">Folio</dt>
+          <dd><a href="{% url 'proyectos:detalle' ver.proyecto.pk %}" class="text-teal-700 hover:underline font-mono">{{ ver.proyecto.folio }}</a></dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Nombre</dt>
+          <dd class="text-gray-800">{{ ver.proyecto.nombre }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Fecha objetivo</dt>
+          <dd class="text-gray-800 {% if ver.vencida %}text-red-600 font-semibold{% endif %}">
+            {{ ver.fecha_objetivo|date:"d/m/Y" }}
+            {% if ver.vencida %} <span class="text-xs">(Vencida)</span>{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Días restantes</dt>
+          <dd class="text-gray-800">
+            {% if ver.vencida %}—
+            {% else %}{{ ver.dias_restantes }} días
+            {% endif %}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Formulario de verificación -->
+    <div class="card space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-800">Resultado de la verificación</h2>
+        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold {{ color_estado }}">
+          {{ ver.get_estado_display }}
+        </span>
+      </div>
+
+      {% if puede_gestionar %}
+      <form method="post" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Responsable</label>
+            {{ form.responsable }}
+          </div>
+          <div>
+            <label class="form-label">Fecha realizada</label>
+            {{ form.fecha_realizada }}
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Estado</label>
+          {{ form.estado }}
+        </div>
+        <div>
+          <label class="form-label">Descripción del resultado</label>
+          {{ form.resultado_descripcion }}
+        </div>
+        <div>
+          <label class="form-label">Evidencia (archivo)</label>
+          {{ form.evidencia }}
+          {% if ver.evidencia %}
+          <p class="text-xs text-gray-400 mt-1">Archivo actual: <a href="{{ ver.evidencia.url }}" target="_blank" class="text-teal-700 hover:underline">Ver</a></p>
+          {% endif %}
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="submit" class="btn-primary">Guardar verificación</button>
+        </div>
+      </form>
+      {% else %}
+      <!-- Vista readonly -->
+      <dl class="space-y-3 text-sm">
+        <div>
+          <dt class="form-label mb-0.5">Responsable</dt>
+          <dd>{{ ver.responsable.get_full_name|default:ver.responsable.username|default:"Sin asignar" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Fecha realizada</dt>
+          <dd>{{ ver.fecha_realizada|date:"d/m/Y"|default:"Pendiente" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Resultado</dt>
+          <dd class="whitespace-pre-line text-gray-700">{{ ver.resultado_descripcion|default:"Sin descripción." }}</dd>
+        </div>
+      </dl>
+      {% endif %}
+    </div>
+
+    <!-- Si No Eficaz: sugerir crear nueva NC -->
+    {% if ver.estado == 'no_eficaz' %}
+    <div class="card border border-red-200 bg-red-50 space-y-2">
+      <h3 class="text-sm font-semibold text-red-700">Acción requerida</h3>
+      <p class="text-sm text-red-600">La verificación resultó No Eficaz. Se recomienda generar una nueva No Conformidad para re-analizar la causa raíz.</p>
+      <a href="{% url 'nc:crear' %}" class="btn-danger inline-block text-sm">Crear nueva NC</a>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Sidebar -->
+  <div class="w-60 space-y-4 flex-shrink-0">
+    <div class="card text-xs text-gray-400 space-y-1">
+      <p>Creada: {{ ver.creado_en|date:"d/m/Y H:i" }}</p>
+      {% if ver.actualizado_en %}
+      <p>Última actualización: {{ ver.actualizado_en|date:"d/m/Y H:i" }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

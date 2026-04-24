@@ -65,14 +65,15 @@
       </div>
 
       {% if cinco_form %}
+      {# EDITABLE — solo calidad/admin #}
       <form method="post" novalidate>
         {% csrf_token %}
         <input type="hidden" name="accion" value="guardar_5p">
 
         <div class="space-y-4">
           {% for etapa, label in etapas %}
-          <div class="relative pl-6 pb-4 {% if not forloop.last %}border-l-2 border-gray-200{% endif %}">
-            <div class="absolute -left-2.5 top-0 w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
+          <div class="relative pl-7 pb-4 border-l-2 border-gray-200 last:border-transparent">
+            <div class="absolute -left-3 top-0 w-6 h-6 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shadow">
               {{ forloop.counter }}
             </div>
             <label class="form-label">{{ label }}</label>
@@ -80,8 +81,13 @@
           </div>
           {% endfor %}
 
+          <div class="pt-2 border-t border-dashed border-gray-200">
+            <label class="form-label font-semibold text-gray-700">Causa Raíz identificada</label>
+            {{ cinco_form.causa_raiz }}
+          </div>
+
           <div>
-            <label class="form-label text-primary font-semibold">Acción Correctiva</label>
+            <label class="form-label font-semibold text-primary">Acción Correctiva propuesta</label>
             {{ cinco_form.accion_correctiva }}
           </div>
         </div>
@@ -90,6 +96,33 @@
           <button type="submit" class="btn-primary text-xs">Guardar análisis</button>
         </div>
       </form>
+      {% elif cinco_p %}
+      {# READ-ONLY — operarios solo ven el resultado si ya fue completado #}
+      {% if cinco_p.completo %}
+      <div class="space-y-3 text-sm">
+        {% for etapa, label in etapas %}
+        <div class="pl-7 relative border-l-2 border-gray-200 pb-3 last:border-transparent">
+          <div class="absolute -left-3 top-0 w-6 h-6 rounded-full bg-gray-300 text-white text-[11px] font-bold flex items-center justify-center">{{ forloop.counter }}</div>
+          <p class="text-xs text-gray-400 mb-0.5">{{ label }}</p>
+          <p class="text-gray-700">{{ cinco_p|get_item:etapa|default:"—" }}</p>
+        </div>
+        {% endfor %}
+        {% if cinco_p.causa_raiz %}
+        <div class="pt-2 border-t border-dashed border-gray-100">
+          <p class="text-xs text-gray-400 mb-0.5">Causa Raíz</p>
+          <p class="font-medium text-gray-700">{{ cinco_p.causa_raiz }}</p>
+        </div>
+        {% endif %}
+        {% if cinco_p.accion_correctiva %}
+        <div>
+          <p class="text-xs text-primary mb-0.5 font-semibold">Acción Correctiva</p>
+          <p class="text-gray-700">{{ cinco_p.accion_correctiva }}</p>
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400 text-center py-6">El análisis 5 Porqués aún no fue completado por el área de Calidad.</p>
+      {% endif %}
       {% endif %}
     </div>
 

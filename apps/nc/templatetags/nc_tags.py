@@ -4,9 +4,11 @@ register = template.Library()
 
 
 @register.filter
-def get_item(dictionary, key):
-    """Permite acceder a un dict con una variable en template: dict|get_item:variable"""
-    return dictionary.get(key, '')
+def get_item(obj, key):
+    """Accede a dict['key'] o obj.key según el tipo."""
+    if isinstance(obj, dict):
+        return obj.get(key, '')
+    return getattr(obj, key, '')
 
 
 @register.filter

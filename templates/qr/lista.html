@@ -1,6 +1,37 @@
 ﻿{% extends "base.html" %}
+
 {% block title %}Quejas y Reclamos — SGC{% endblock %}
 {% block page_title %}Quejas y Reclamos{% endblock %}
+
 {% block content %}
-<div class="card py-16 text-center"><p class="text-gray-400 text-sm">Módulo en construcción.</p></div>
+<div class="flex items-center justify-between mb-5">
+  <div class="flex gap-2 flex-wrap">
+    <form class="flex gap-2 flex-wrap"
+          hx-get="{% url 'qr:lista' %}"
+          hx-target="#tabla-qr"
+          hx-trigger="change, keyup changed delay:400ms"
+          hx-push-url="true">
+      <input type="text" name="q" value="{{ filtros.q }}"
+             placeholder="Folio o cliente..."
+             class="form-input w-40 text-sm py-1.5">
+      <select name="estado" class="form-input text-sm py-1.5">
+        <option value="">Todos los estados</option>
+        {% for val, label in estados %}
+        <option value="{{ val }}" {% if filtros.estado == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="prioridad" class="form-input text-sm py-1.5">
+        <option value="">Toda prioridad</option>
+        <option value="alta" {% if filtros.prioridad == 'alta' %}selected{% endif %}>Alta</option>
+        <option value="media" {% if filtros.prioridad == 'media' %}selected{% endif %}>Media</option>
+        <option value="baja" {% if filtros.prioridad == 'baja' %}selected{% endif %}>Baja</option>
+      </select>
+    </form>
+  </div>
+  <a href="{% url 'qr:crear' %}" class="btn-primary text-sm">+ Nuevo Reclamo</a>
+</div>
+
+<div id="tabla-qr">
+  {% include "qr/partials/tabla_qr.html" %}
+</div>
 {% endblock %}

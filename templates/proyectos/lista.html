@@ -1,6 +1,74 @@
 ﻿{% extends "base.html" %}
+
 {% block title %}Proyectos — SGC{% endblock %}
 {% block page_title %}Proyectos{% endblock %}
+
 {% block content %}
-<div class="card py-16 text-center"><p class="text-gray-400 text-sm">Módulo en construcción.</p></div>
+<div class="flex items-center justify-between mb-5">
+  <div class="flex gap-2">
+    <form class="flex gap-2" method="get">
+      <input type="text" name="q" value="{{ filtros.q }}"
+             placeholder="Folio o nombre..."
+             class="form-input w-40 text-sm py-1.5">
+      <select name="estado" class="form-input text-sm py-1.5" onchange="this.form.submit()">
+        <option value="">Todos los estados</option>
+        {% for val, label in estados %}
+        <option value="{{ val }}" {% if filtros.estado == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+  {% if request.user.es_calidad or request.user.is_superuser %}
+  <a href="{% url 'proyectos:crear' %}" class="btn-primary text-sm">+ Nuevo Proyecto</a>
+  {% endif %}
+</div>
+
+{% if proyectos %}
+<div class="card overflow-hidden p-0">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Folio</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nombre</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Origen</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Avance</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Inicio</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for p in proyectos %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 font-mono font-semibold">{{ p.folio }}</td>
+        <td class="px-4 py-3">{{ p.nombre }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ p.get_origen_display }}</td>
+        <td class="px-4 py-3">
+          <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+            {% if p.estado == 'finalizado' %}bg-green-100 text-green-700
+            {% elif p.estado == 'en_curso' %}bg-blue-50 text-blue-700
+            {% else %}bg-gray-100 text-gray-600{% endif %}">
+            {{ p.get_estado_display }}
+          </span>
+        </td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            <div class="w-20 bg-gray-200 rounded-full h-1.5">
+              <div class="bg-teal-600 h-1.5 rounded-full" style="width: {{ p.porcentaje_avance }}%"></div>
+            </div>
+            <span class="text-xs text-gray-500">{{ p.porcentaje_avance }}%</span>
+          </div>
+        </td>
+        <td class="px-4 py-3 text-gray-500">{{ p.fecha_inicio|date:"d/m/Y" }}</td>
+        <td class="px-4 py-3"><a href="{% url 'proyectos:detalle' p.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card text-center py-16">
+  <p class="text-sm text-gray-400">No hay proyectos registrados.</p>
+</div>
+{% endif %}
 {% endblock %}

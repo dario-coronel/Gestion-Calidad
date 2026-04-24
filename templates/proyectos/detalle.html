@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}{{ proyecto.folio }} — SGC{% endblock %}
+{% block page_title %}{{ proyecto.folio }} — {{ proyecto.nombre }}{% endblock %}
+
+{% block content %}
+<div class="flex items-start gap-6">
+
+  <!-- Columna principal -->
+  <div class="flex-1 space-y-5">
+
+    <!-- Info del proyecto -->
+    <div class="card space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-800">Datos del Proyecto</h2>
+        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold {{ color_estado }}">
+          {{ proyecto.get_estado_display }}
+        </span>
+      </div>
+
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div>
+          <dt class="form-label mb-0.5">Origen</dt>
+          <dd class="text-gray-800">{{ proyecto.get_origen_display }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Prioridad</dt>
+          <dd class="text-gray-800">{{ proyecto.get_prioridad_display }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Responsable</dt>
+          <dd class="text-gray-800">{{ proyecto.responsable.get_full_name|default:proyecto.responsable.username|default:"Sin asignar" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Proveedor</dt>
+          <dd class="text-gray-800">{{ proyecto.proveedor|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Inicio</dt>
+          <dd class="text-gray-800">{{ proyecto.fecha_inicio|date:"d/m/Y" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Fin estimado</dt>
+          <dd class="text-gray-800">{{ proyecto.fecha_fin|date:"d/m/Y"|default:"—" }}</dd>
+        </div>
+      </dl>
+
+      <!-- Barra de avance -->
+      <div>
+        <div class="flex justify-between text-xs text-gray-500 mb-1">
+          <span>Avance general</span>
+          <span class="font-semibold">{{ proyecto.porcentaje_avance }}%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-teal-600 h-2 rounded-full transition-all" style="width: {{ proyecto.porcentaje_avance }}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subtareas / Kanban -->
+    <div class="card space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold">Subtareas</h3>
+        <span class="text-xs text-gray-400">{{ proyecto.subtareas.filter(completada=True).count|default:"0" }} completadas</span>
+      </div>
+
+      <ul class="space-y-2">
+        {% for st in proyecto.subtareas.all %}
+        <li class="flex items-center gap-3 p-2 rounded-lg border border-gray-100 hover:bg-gray-50">
+          <form method="post" class="flex items-center gap-3 flex-1">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="toggle_subtarea">
+            <input type="hidden" name="subtarea_id" value="{{ st.pk }}">
+            <button type="submit" class="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center
+              {% if st.completada %}border-teal-600 bg-teal-600 text-white{% else %}border-gray-300{% endif %}">
+              {% if st.completada %}
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              {% endif %}
+            </button>
+            <span class="text-sm flex-1 {% if st.completada %}line-through text-gray-400{% else %}text-gray-700{% endif %}">
+              {{ st.descripcion }}
+            </span>
+          </form>
+          {% if st.completada_en %}
+          <span class="text-xs text-gray-400">{{ st.completada_en|date:"d/m/Y" }}</span>
+          {% endif %}
+        </li>
+        {% empty %}
+        <li class="text-sm text-gray-400 text-center py-4">No hay subtareas aún.</li>
+        {% endfor %}
+      </ul>
+
+      {% if puede_gestionar %}
+      <form method="post" class="flex gap-2 pt-2 border-t border-gray-100">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="agregar_subtarea">
+        {{ subtarea_form.descripcion }}
+        <button type="submit" class="btn-primary text-sm whitespace-nowrap">Agregar</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- NC vinculada -->
+    {% if proyecto.nc %}
+    <div class="card">
+      <h3 class="text-sm font-semibold mb-2">No Conformidad origen</h3>
+      <a href="{% url 'nc:detalle' proyecto.nc.pk %}" class="text-teal-700 hover:underline text-sm font-mono">
+        {{ proyecto.nc.folio }} — {{ proyecto.nc.descripcion|truncatewords:10 }}
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- OM vinculada -->
+    {% if proyecto.om %}
+    <div class="card">
+      <h3 class="text-sm font-semibold mb-2">Oportunidad de Mejora origen</h3>
+      <a href="{% url 'om:detalle' proyecto.om.pk %}" class="text-teal-700 hover:underline text-sm font-mono">
+        {{ proyecto.om.folio }}
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Verificación -->
+    {% if proyecto.verificacion %}
+    <div class="card">
+      <h3 class="text-sm font-semibold mb-2">Verificación de eficacia</h3>
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600">{{ proyecto.verificacion.get_estado_display }}</span>
+        <a href="{% url 'verificacion:detalle' proyecto.verificacion.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver verificación →</a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Sidebar -->
+  <div class="w-60 space-y-4 flex-shrink-0">
+
+    <div class="card space-y-3">
+      <h3 class="text-sm font-semibold">Acciones</h3>
+      {% if puede_gestionar %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="cambiar_estado">
+        <select name="nuevo_estado" class="form-input text-sm mb-2">
+          {% for val, label in estados %}
+          <option value="{{ val }}" {% if proyecto.estado == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-primary w-full text-sm">Cambiar estado</button>
+      </form>
+      <a href="{% url 'proyectos:editar' proyecto.pk %}" class="btn-secondary w-full text-sm text-center block">Editar proyecto</a>
+      {% endif %}
+    </div>
+
+    <div class="card text-xs text-gray-400 space-y-1">
+      <p>Creado: {{ proyecto.creado_en|date:"d/m/Y H:i" }}</p>
+      {% if proyecto.creado_por %}
+      <p>Por: {{ proyecto.creado_por.get_full_name|default:proyecto.creado_por.username }}</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

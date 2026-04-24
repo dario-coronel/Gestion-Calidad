@@ -1,0 +1,40 @@
+{% if om_list %}
+<div class="card overflow-hidden p-0">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Folio</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Clasificación</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Sector</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Fecha</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for om in om_list %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 font-mono font-semibold">{{ om.folio }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ om.get_clasificacion_display }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ om.sector|default:"—" }}</td>
+        <td class="px-4 py-3">
+          <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+            {% if om.estado == 'cerrada' %}bg-green-100 text-green-700
+            {% elif om.estado == 'en_implementacion' %}bg-blue-50 text-blue-700
+            {% elif om.estado == 'rechazada' %}bg-gray-100 text-gray-500
+            {% else %}bg-yellow-50 text-yellow-700{% endif %}">
+            {{ om.get_estado_display }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-gray-500">{{ om.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-3"><a href="{% url 'om:detalle' om.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card text-center py-16">
+  <p class="text-sm text-gray-400">No hay oportunidades de mejora con los filtros aplicados.</p>
+</div>
+{% endif %}

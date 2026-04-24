@@ -108,12 +108,13 @@ def detalle(request, pk):
     cinco_p = getattr(nc, 'cinco_porques', None)
     cinco_form = None
     matriz_form = None
+    puede_calidad = request.user.es_calidad or request.user.is_superuser
 
     if request.method == 'POST':
         accion = request.POST.get('accion', '')
 
-        # Guardar 5 Porqués
-        if accion == 'guardar_5p' and cinco_p:
+        # Guardar 5 Porqués (solo calidad/admin)
+        if accion == 'guardar_5p' and cinco_p and puede_calidad:
             cinco_form = CincoPorquesForm(request.POST, instance=cinco_p)
             if cinco_form.is_valid():
                 cp = cinco_form.save(commit=False)
@@ -124,16 +125,16 @@ def detalle(request, pk):
                 messages.success(request, 'Análisis 5 Porqués guardado.')
                 return redirect('nc:detalle', pk=pk)
 
-        # Guardar Matriz de Riesgo
-        elif accion == 'guardar_riesgo' and request.user.es_calidad:
+        # Guardar Matriz de Riesgo (solo calidad/admin)
+        elif accion == 'guardar_riesgo' and puede_calidad:
             matriz_form = MatrizRiesgoForm(request.POST, instance=nc)
             if matriz_form.is_valid():
                 matriz_form.save()
                 messages.success(request, 'Matriz de riesgo actualizada.')
                 return redirect('nc:detalle', pk=pk)
 
-        # Cambio de estado
-        elif accion == 'cambiar_estado' and request.user.es_calidad:
+        # Cambio de estado (solo calidad/admin)
+        elif accion == 'cambiar_estado' and puede_calidad:
             nuevo_estado = request.POST.get('nuevo_estado')
             if nuevo_estado in dict(EstadoNC.choices):
                 nc.estado = nuevo_estado
@@ -142,21 +143,33 @@ def detalle(request, pk):
                 messages.success(request, f'Estado actualizado a: {nc.get_estado_display()}')
                 return redirect('nc:detalle', pk=pk)
 
-    if not cinco_form and cinco_p:
-        cinco_form = CincoPorquesForm(instance=cinco_p)
-    if not matriz_form:
-        matriz_form = MatrizRiesgoForm(instance=nc)
+    # Solo mostrar form editable a calidad/admin
+    if puede_calidad:
+        if not cinco_form and cinco_p:
+            cinco_form = CincoPorquesForm(instance=cinco_p)
+        if not matriz_form:
+            matriz_form = MatrizRiesgoForm(instance=nc)
+
+    etapas = [
+        ('etapa_1', '¿Por qué? (1º nivel)'),
+        ('etapa_2', '¿Por qué? (2º nivel)'),
+        ('etapa_3', '¿Por qué? (3º nivel)'),
+        ('etapa_4', '¿Por qué? (4º nivel)'),
+        ('etapa_5', '¿Por qué? (5º nivel)'),
+    ]
 
     return render(request, 'nc/detalle.html', {
         'nc': nc,
         'cinco_form': cinco_form,
         'matriz_form': matriz_form,
         'cinco_p': cinco_p,
+        'etapas': etapas,
         'color_estado': COLORES_ESTADO.get(nc.estado, ''),
         'color_riesgo': _color_riesgo(nc.riesgo_calculado),
         'estados': EstadoNC.choices,
-        'puede_editar_riesgo': request.user.es_calidad,
-        'puede_cambiar_estado': request.user.es_calidad,
+        'puede_calidad': puede_calidad,
+        'puede_editar_riesgo': puede_calidad,
+        'puede_cambiar_estado': puede_calidad,
     })
 
 

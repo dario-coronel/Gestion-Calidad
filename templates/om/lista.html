@@ -1,6 +1,31 @@
 ﻿{% extends "base.html" %}
+
 {% block title %}Oportunidades de Mejora — SGC{% endblock %}
 {% block page_title %}Oportunidades de Mejora{% endblock %}
+
 {% block content %}
-<div class="card py-16 text-center"><p class="text-gray-400 text-sm">Módulo en construcción.</p></div>
+<div class="flex items-center justify-between mb-5">
+  <div class="flex gap-2 flex-wrap">
+    <form class="flex gap-2 flex-wrap"
+          hx-get="{% url 'om:lista' %}"
+          hx-target="#tabla-om"
+          hx-trigger="change, keyup changed delay:400ms"
+          hx-push-url="true">
+      <input type="text" name="q" value="{{ filtros.q }}"
+             placeholder="Folio o descripción..."
+             class="form-input w-44 text-sm py-1.5">
+      <select name="estado" class="form-input text-sm py-1.5">
+        <option value="">Todos los estados</option>
+        {% for val, label in estados %}
+        <option value="{{ val }}" {% if filtros.estado == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+  <a href="{% url 'om:crear' %}" class="btn-primary text-sm">+ Nueva OM</a>
+</div>
+
+<div id="tabla-om">
+  {% include "om/partials/tabla_om.html" %}
+</div>
 {% endblock %}

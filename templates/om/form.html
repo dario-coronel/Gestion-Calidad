@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} — SGC{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+    <div class="card space-y-5">
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <label class="form-label">Clasificación *</label>
+          {{ form.clasificacion }}
+        </div>
+        <div>
+          <label class="form-label">Sector</label>
+          {{ form.sector }}
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <label class="form-label">Fecha *</label>
+          {{ form.fecha }}
+        </div>
+        <div>
+          <label class="form-label">Responsable</label>
+          {{ form.responsable }}
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Descripción *</label>
+        {{ form.descripcion }}
+      </div>
+      <div>
+        <label class="form-label">Beneficio potencial</label>
+        {{ form.beneficio_potencial }}
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn-primary">{{ accion }}</button>
+      <a href="{% url 'om:lista' %}" class="btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

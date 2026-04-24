@@ -5,4 +5,5 @@ app_name = 'verificacion'
 
 urlpatterns = [
     path('', views.lista, name='lista'),
+    path('<int:pk>/', views.detalle, name='detalle'),
 ]

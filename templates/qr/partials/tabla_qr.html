@@ -1,0 +1,45 @@
+{% if qr_list %}
+<div class="card overflow-hidden p-0">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Folio</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tipo</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Cliente/Pedido</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Prioridad</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Fecha</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for r in qr_list %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 font-mono font-semibold">{{ r.folio }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ r.get_tipo_reclamo_display }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ r.id_cliente_pedido|default:"—" }}</td>
+        <td class="px-4 py-3">
+          <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+            {% if r.prioridad == 'alta' %}bg-red-100 text-red-700
+            {% elif r.prioridad == 'media' %}bg-yellow-50 text-yellow-700
+            {% else %}bg-gray-100 text-gray-600{% endif %}">
+            {{ r.get_prioridad_display }}
+          </span>
+        </td>
+        <td class="px-4 py-3">
+          <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium">
+            {{ r.get_estado_display }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-gray-500">{{ r.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-3"><a href="{% url 'qr:detalle' r.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card text-center py-16">
+  <p class="text-sm text-gray-400">No hay quejas/reclamos con los filtros aplicados.</p>
+</div>
+{% endif %}
