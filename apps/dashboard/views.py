@@ -31,6 +31,31 @@ def index(request):
     criticas = nc_qs.filter(prioridad='critica').count()
     proyectos_activos = proyectos_qs.exclude(estado=EstadoProyecto.FINALIZADO).count()
 
+    # ── Matriz de riesgo 5×5 ──────────────────────────────────────
+    _matrix = {}
+    for nc in nc_qs.filter(probabilidad__isnull=False, impacto__isnull=False).only(
+            'pk', 'folio', 'area', 'probabilidad', 'impacto'):
+        _matrix.setdefault((nc.probabilidad, nc.impacto), []).append(
+            {'folio': nc.folio, 'pk': nc.pk, 'area': nc.area}
+        )
+
+    def _nivel(r):
+        if r <= 4:  return 'bajo'
+        if r <= 9:  return 'medio'
+        if r <= 14: return 'alto'
+        return 'critico'
+
+    matrix_rows = []
+    for prob in range(5, 0, -1):          # filas: prob 5 → 1 (arriba = mayor)
+        cells = []
+        for imp in range(1, 6):           # cols: impacto 1 → 5 (derecha = mayor)
+            r = prob * imp
+            ncs = _matrix.get((prob, imp), [])
+            cells.append({'prob': prob, 'imp': imp, 'riesgo': r,
+                          'nivel': _nivel(r), 'ncs': ncs, 'count': len(ncs)})
+        matrix_rows.append({'prob': prob, 'cells': cells})
+    # ─────────────────────────────────────────────────────────────
+
     context = {
         'kpi_total_nc': nc_qs.count(),
         'kpi_nc_abiertas': abiertas,
@@ -44,5 +69,7 @@ def index(request):
         'proyecto_data_json': json.dumps(proyecto_data),
         'ultimas_nc': nc_qs.select_related('responsable').order_by('-fecha')[:6],
         'ultimos_proyectos': proyectos_qs.select_related('responsable').order_by('-fecha_inicio')[:6],
+        'matrix_rows': matrix_rows,
+        'impacto_labels': ['Muy bajo', 'Bajo', 'Moderado', 'Alto', 'Muy alto'],
     }
     return render(request, 'dashboard/index.html', context)

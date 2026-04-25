@@ -47,7 +47,90 @@
   </div>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+{# ══ Matriz de Riesgo 5×5 ══ #}
+<div class="card mb-5">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-sm font-semibold text-gray-700">Matriz de Riesgo — No Conformidades</h2>
+    <div class="flex items-center gap-3 text-xs text-gray-500">
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-green-200 inline-block border border-green-400"></span> Bajo (1–4)</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-yellow-200 inline-block border border-yellow-400"></span> Medio (5–9)</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-orange-200 inline-block border border-orange-400"></span> Alto (10–14)</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-red-200 inline-block border border-red-400"></span> Crítico (15–25)</span>
+    </div>
+  </div>
+
+  <div class="flex gap-2">
+    {# Eje Y — Probabilidad (vertical, rotado) #}
+    <div class="flex flex-col items-center justify-center w-7 flex-shrink-0">
+      <span class="text-xs text-gray-400 font-medium whitespace-nowrap"
+            style="writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.05em;">
+        PROBABILIDAD
+      </span>
+    </div>
+
+    <div class="flex-1 overflow-x-auto">
+      <table class="w-full border-collapse" style="min-width: 340px;">
+        <thead>
+          <tr>
+            <th class="w-10"></th>
+            {% for label in impacto_labels %}
+            <th class="text-center text-xs text-gray-500 font-medium pb-1 px-1">{{ label }}</th>
+            {% endfor %}
+          </tr>
+          <tr>
+            <th></th>
+            {% for i in "12345" %}
+            <th class="text-center text-xs text-gray-400 pb-2">{{ forloop.counter }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in matrix_rows %}
+          <tr>
+            {# Etiqueta fila #}
+            <td class="text-right text-xs text-gray-400 pr-2 py-1 font-medium">{{ row.prob }}</td>
+            {% for cell in row.cells %}
+            <td class="p-0.5 relative group">
+              {# Celda coloreada #}
+              <div class="relative rounded flex items-center justify-center cursor-default select-none font-bold text-sm h-12
+                {% if cell.nivel == 'bajo' %}bg-green-100 text-green-700 border border-green-300
+                {% elif cell.nivel == 'medio' %}bg-yellow-100 text-yellow-700 border border-yellow-300
+                {% elif cell.nivel == 'alto' %}bg-orange-100 text-orange-700 border border-orange-300
+                {% else %}bg-red-100 text-red-700 border border-red-300{% endif %}">
+
+                {% if cell.count > 0 %}
+                  {# Punto de conteo #}
+                  <span class="z-10 relative">{{ cell.count }}</span>
+                  {# Badge de folio(s) en tooltip #}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20
+                              bg-gray-900 text-white text-xs rounded-lg px-2 py-1.5 whitespace-nowrap shadow-lg pointer-events-none">
+                    <p class="font-semibold text-gray-300 mb-0.5">P={{ cell.prob }} × I={{ cell.imp }} = {{ cell.riesgo }}</p>
+                    {% for nc in cell.ncs %}
+                    <p>• <a href="{% url 'nc:detalle' nc.pk %}" class="underline hover:text-teal-300 pointer-events-auto">{{ nc.folio }}</a>
+                      <span class="text-gray-400">{{ nc.area }}</span></p>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <span class="text-gray-300 text-xs">{{ cell.riesgo }}</span>
+                {% endif %}
+              </div>
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td></td>
+            <td colspan="5" class="text-center text-xs text-gray-400 pt-2">← IMPACTO →</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5">
   <div class="card overflow-hidden p-0">
     <div class="px-4 py-3 border-b border-gray-100">
       <h2 class="text-sm font-semibold text-gray-700">Últimas No Conformidades</h2>
