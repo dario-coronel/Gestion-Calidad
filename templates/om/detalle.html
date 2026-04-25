@@ -66,6 +66,21 @@
 
     <div class="card space-y-3">
       <h3 class="text-sm font-semibold">Acciones</h3>
+
+      {% if puede_editar %}
+      <a href="{% url 'om:editar' om.pk %}" class="btn-secondary w-full text-sm text-center block">Editar</a>
+      {% endif %}
+
+      {% if puede_gestionar and om.estado == 'en_revision' %}
+      <form method="post" class="space-y-2">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="revision_calidad">
+        <button type="submit" name="decision" value="aprobar" class="btn-primary w-full text-sm">Aceptar</button>
+        <button type="submit" name="decision" value="reenviar" class="btn-secondary w-full text-sm">Reenviar</button>
+        <button type="submit" name="decision" value="rechazar" class="btn-danger w-full text-sm">Rechazar</button>
+      </form>
+      {% endif %}
+
       {% if puede_gestionar %}
       <form method="post">
         {% csrf_token %}
@@ -77,7 +92,6 @@
         </select>
         <button type="submit" class="btn-primary w-full text-sm">Cambiar estado</button>
       </form>
-      <a href="{% url 'om:editar' om.pk %}" class="btn-secondary w-full text-sm text-center block">Editar</a>
       {% endif %}
     </div>
 

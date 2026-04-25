@@ -101,6 +101,15 @@
         Informes
       </a>
 
+      {% if request.user.es_admin or request.user.is_superuser %}
+      <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Administración</p>
+      <a href="{% url 'accounts:usuarios_lista' %}"
+         class="nav-link {% if active_app == 'accounts' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V4H2v16h5m10 0v-2a4 4 0 00-8 0v2m8 0H9m8-10a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        Usuarios
+      </a>
+      {% endif %}
+
       {% endwith %}
     </nav>
 

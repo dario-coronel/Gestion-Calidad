@@ -6,10 +6,7 @@
 {% block content %}
 <div class="flex items-start gap-6">
 
-  <!-- Columna principal -->
   <div class="flex-1 space-y-5">
-
-    <!-- Info general -->
     <div class="card space-y-4">
       <div class="flex items-center justify-between">
         <h2 class="text-base font-semibold text-gray-800">Información del Reclamo</h2>
@@ -19,47 +16,22 @@
       </div>
 
       <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-        <div>
-          <dt class="form-label mb-0.5">Tipo</dt>
-          <dd class="text-gray-800">{{ qr.get_tipo_reclamo_display }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Área origen</dt>
-          <dd class="text-gray-800">{{ qr.area_origen|default:"—" }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Cliente / N° Pedido</dt>
-          <dd class="text-gray-800">{{ qr.id_cliente_pedido|default:"—" }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Fecha</dt>
-          <dd class="text-gray-800">{{ qr.fecha|date:"d/m/Y" }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Prioridad</dt>
-          <dd class="text-gray-800">{{ qr.get_prioridad_display }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Clasificación</dt>
-          <dd class="text-gray-800">{{ qr.get_clasificacion_display }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Responsable</dt>
-          <dd class="text-gray-800">{{ qr.responsable.get_full_name|default:qr.responsable.username|default:"Sin asignar" }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Días resolución</dt>
-          <dd class="text-gray-800">{{ qr.dias_resolucion|default:"—" }}</dd>
-        </div>
+        <div><dt class="form-label mb-0.5">Tipo</dt><dd class="text-gray-800">{{ qr.get_tipo_reclamo_display }}</dd></div>
+        <div><dt class="form-label mb-0.5">Area origen</dt><dd class="text-gray-800">{{ qr.area_origen|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Cliente / Nro Pedido</dt><dd class="text-gray-800">{{ qr.id_cliente_pedido|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Fecha</dt><dd class="text-gray-800">{{ qr.fecha|date:"d/m/Y" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Prioridad</dt><dd class="text-gray-800">{{ qr.get_prioridad_display }}</dd></div>
+        <div><dt class="form-label mb-0.5">Clasificacion</dt><dd class="text-gray-800">{{ qr.clasificacion|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Responsable</dt><dd class="text-gray-800">{{ qr.responsable.get_full_name|default:qr.responsable.username|default:"Sin asignar" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Dias resolucion</dt><dd class="text-gray-800">{{ qr.dias_resolucion|default:"—" }}</dd></div>
       </dl>
 
       <div>
-        <dt class="form-label mb-0.5">Descripción</dt>
+        <dt class="form-label mb-0.5">Descripcion</dt>
         <dd class="text-sm text-gray-800 whitespace-pre-line">{{ qr.descripcion }}</dd>
       </div>
     </div>
 
-    <!-- Adjuntos -->
     {% if qr.adjuntos.exists %}
     <div class="card">
       <h3 class="text-sm font-semibold mb-3">Adjuntos</h3>
@@ -70,17 +42,30 @@
       </ul>
     </div>
     {% endif %}
-
   </div>
 
-  <!-- Sidebar acciones -->
   <div class="w-60 space-y-4 flex-shrink-0">
-
     <div class="card space-y-3">
       <h3 class="text-sm font-semibold">Acciones</h3>
+
+      {% if puede_editar %}
+      <a href="{% url 'qr:editar' qr.pk %}" class="btn-secondary w-full text-sm text-center block">Editar</a>
+      {% endif %}
+
+      {% if puede_gestionar and qr.estado == 'en_revision' %}
+      <form method="post" class="space-y-2">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="revision_calidad">
+        <button type="submit" name="decision" value="aprobar" class="btn-primary w-full text-sm">Aceptar</button>
+        <button type="submit" name="decision" value="reenviar" class="btn-secondary w-full text-sm">Reenviar</button>
+        <button type="submit" name="decision" value="rechazar" class="btn-danger w-full text-sm">Rechazar</button>
+      </form>
+      {% endif %}
+
       {% if puede_gestionar %}
       <form method="post">
         {% csrf_token %}
+        <input type="hidden" name="accion" value="cambiar_estado">
         <select name="nuevo_estado" class="form-input text-sm mb-2">
           {% for val, label in estados %}
           <option value="{{ val }}" {% if qr.estado == val %}selected{% endif %}>{{ label }}</option>
@@ -88,7 +73,6 @@
         </select>
         <button type="submit" class="btn-primary w-full text-sm">Cambiar estado</button>
       </form>
-      <a href="{% url 'qr:editar' qr.pk %}" class="btn-secondary w-full text-sm text-center block">Editar</a>
       {% endif %}
     </div>
 
@@ -98,108 +82,6 @@
       <p>Por: {{ qr.creado_por.get_full_name|default:qr.creado_por.username }}</p>
       {% endif %}
     </div>
-
-  </div>
-</div>
-{% endblock %}
-
-{% block content %}
-<div class="flex items-start gap-6">
-
-  <!-- Columna principal -->
-  <div class="flex-1 space-y-5">
-
-    <!-- Info general -->
-    <div class="card space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-base font-semibold text-gray-800">Información del Reclamo</h2>
-        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold {{ color_estado }}">
-          {{ reclamo.get_estado_display }}
-        </span>
-      </div>
-
-      <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-        <div>
-          <dt class="form-label mb-0.5">Tipo</dt>
-          <dd class="text-gray-800">{{ reclamo.get_tipo_reclamo_display }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Área origen</dt>
-          <dd class="text-gray-800">{{ reclamo.area_origen|default:"—" }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Cliente / N° Pedido</dt>
-          <dd class="text-gray-800">{{ reclamo.id_cliente_pedido|default:"—" }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Fecha</dt>
-          <dd class="text-gray-800">{{ reclamo.fecha|date:"d/m/Y" }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Prioridad</dt>
-          <dd class="text-gray-800">{{ reclamo.get_prioridad_display }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Clasificación</dt>
-          <dd class="text-gray-800">{{ reclamo.get_clasificacion_display }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Responsable</dt>
-          <dd class="text-gray-800">{{ reclamo.responsable.get_full_name|default:reclamo.responsable.username|default:"Sin asignar" }}</dd>
-        </div>
-        <div>
-          <dt class="form-label mb-0.5">Días resolución</dt>
-          <dd class="text-gray-800">{{ reclamo.dias_resolucion|default:"—" }}</dd>
-        </div>
-      </dl>
-
-      <div>
-        <dt class="form-label mb-0.5">Descripción</dt>
-        <dd class="text-sm text-gray-800 whitespace-pre-line">{{ reclamo.descripcion }}</dd>
-      </div>
-    </div>
-
-    <!-- Adjuntos -->
-    {% if reclamo.adjuntos.exists %}
-    <div class="card">
-      <h3 class="text-sm font-semibold mb-3">Adjuntos</h3>
-      <ul class="space-y-1.5 text-sm">
-        {% for adj in reclamo.adjuntos.all %}
-        <li><a href="{{ adj.archivo.url }}" target="_blank" class="text-teal-700 hover:underline">{{ adj.nombre|default:adj.archivo.name }}</a></li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-
-  </div>
-
-  <!-- Sidebar acciones -->
-  <div class="w-60 space-y-4 flex-shrink-0">
-
-    <div class="card space-y-3">
-      <h3 class="text-sm font-semibold">Acciones</h3>
-      {% if puede_gestionar %}
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="accion" value="cambiar_estado">
-        <select name="nuevo_estado" class="form-input text-sm mb-2">
-          {% for val, label in estados %}
-          <option value="{{ val }}" {% if reclamo.estado == val %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="btn-primary w-full text-sm">Cambiar estado</button>
-      </form>
-      <a href="{% url 'qr:editar' reclamo.pk %}" class="btn-secondary w-full text-sm text-center block">Editar</a>
-      {% endif %}
-    </div>
-
-    <div class="card text-xs text-gray-400 space-y-1">
-      <p>Creado: {{ reclamo.creado_en|date:"d/m/Y H:i" }}</p>
-      {% if reclamo.creado_por %}
-      <p>Por: {{ reclamo.creado_por.get_full_name|default:reclamo.creado_por.username }}</p>
-      {% endif %}
-    </div>
-
   </div>
 </div>
 {% endblock %}

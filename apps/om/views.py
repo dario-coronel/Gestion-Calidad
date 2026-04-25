@@ -42,11 +42,18 @@ def lista(request):
 
 @login_required
 def crear(request):
+    puede_cargar = request.user.es_operario or request.user.es_calidad or request.user.is_superuser
+    if not puede_cargar:
+        messages.error(request, 'No tenés permisos para cargar Oportunidades de Mejora.')
+        return redirect('om:lista')
+
     if request.method == 'POST':
         form = OportunidadMejoraForm(request.POST)
         adjunto_form = AdjuntoOMForm(request.POST, request.FILES)
         if form.is_valid():
             om = form.save(commit=False)
+            if request.user.es_operario:
+                om.estado = EstadoOM.EN_REVISION
             om.creado_por = request.user
             om.actualizado_por = request.user
             om.save()
@@ -74,31 +81,70 @@ def crear(request):
 def detalle(request, pk):
     om = get_object_or_404(OportunidadMejora, pk=pk, eliminado=False)
     puede_gestionar = request.user.es_calidad or request.user.is_superuser
+    puede_editar = (
+        puede_gestionar
+        or (request.user.es_operario and om.responsable_id == request.user.id and om.estado == EstadoOM.BORRADOR)
+    )
 
     if request.method == 'POST' and puede_gestionar:
-        nuevo_estado = request.POST.get('nuevo_estado')
-        if nuevo_estado in dict(EstadoOM.choices):
-            om.estado = nuevo_estado
-            om.actualizado_por = request.user
-            om.save(update_fields=['estado', 'actualizado_por', 'actualizado_en'])
-            messages.success(request, f'Estado actualizado a: {om.get_estado_display()}')
-            return redirect('om:detalle', pk=pk)
+        accion = request.POST.get('accion')
+
+        if accion == 'cambiar_estado':
+            nuevo_estado = request.POST.get('nuevo_estado')
+            if nuevo_estado in dict(EstadoOM.choices):
+                om.estado = nuevo_estado
+                om.actualizado_por = request.user
+                om.save(update_fields=['estado', 'actualizado_por', 'actualizado_en'])
+                messages.success(request, f'Estado actualizado a: {om.get_estado_display()}')
+                return redirect('om:detalle', pk=pk)
+
+        elif accion == 'revision_calidad':
+            decision = request.POST.get('decision')
+            if decision == 'aprobar':
+                om.estado = EstadoOM.APROBADA
+                msg = 'OM aprobada por Calidad.'
+            elif decision == 'rechazar':
+                om.estado = EstadoOM.RECHAZADA
+                msg = 'OM rechazada por Calidad.'
+            elif decision == 'reenviar':
+                om.estado = EstadoOM.BORRADOR
+                msg = 'OM reenviada al operario por datos faltantes.'
+            else:
+                msg = ''
+
+            if msg:
+                om.actualizado_por = request.user
+                om.save(update_fields=['estado', 'actualizado_por', 'actualizado_en'])
+                messages.success(request, msg)
+                return redirect('om:detalle', pk=pk)
 
     return render(request, 'om/detalle.html', {
         'om': om,
         'color_estado': COLORES_ESTADO.get(om.estado, ''),
         'estados': EstadoOM.choices,
         'puede_gestionar': puede_gestionar,
+        'puede_editar': puede_editar,
     })
 
 
 @login_required
 def editar(request, pk):
     om = get_object_or_404(OportunidadMejora, pk=pk, eliminado=False)
+    puede_editar = (
+        request.user.es_calidad
+        or request.user.is_superuser
+        or (request.user.es_operario and om.responsable_id == request.user.id and om.estado == EstadoOM.BORRADOR)
+    )
+    if not puede_editar:
+        messages.error(request, 'No tenés permisos para editar esta OM.')
+        return redirect('om:detalle', pk=pk)
+
     if request.method == 'POST':
         form = OportunidadMejoraForm(request.POST, instance=om)
         if form.is_valid():
             om = form.save(commit=False)
+            if request.user.es_operario:
+                om.estado = EstadoOM.EN_REVISION
             om.actualizado_por = request.user
             om.save()
             messages.success(request, f'{om.folio} actualizada.')

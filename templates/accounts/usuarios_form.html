@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} — SGC{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <div class="card">
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Usuario</label>
+          {{ form.username }}
+        </div>
+        <div>
+          <label class="form-label">Email</label>
+          {{ form.email }}
+        </div>
+        <div>
+          <label class="form-label">Nombre</label>
+          {{ form.first_name }}
+        </div>
+        <div>
+          <label class="form-label">Apellido</label>
+          {{ form.last_name }}
+        </div>
+        <div>
+          <label class="form-label">Rol</label>
+          {{ form.rol }}
+        </div>
+        <div>
+          <label class="form-label">Área</label>
+          {{ form.area }}
+        </div>
+        <div>
+          <label class="form-label">Teléfono</label>
+          {{ form.telefono }}
+        </div>
+        <div class="flex items-end">
+          <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+            {{ form.is_active }} Activo
+          </label>
+        </div>
+      </div>
+
+      {% if form.password1 %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Contraseña</label>
+          {{ form.password1 }}
+          {% if form.password1.errors %}<p class="text-xs text-red-600 mt-1">{{ form.password1.errors|striptags }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="form-label">Confirmar contraseña</label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}<p class="text-xs text-red-600 mt-1">{{ form.password2.errors|striptags }}</p>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if form.non_field_errors %}
+      <div class="text-xs text-red-600">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="pt-3 border-t border-gray-100 flex items-center gap-2">
+        <button type="submit" class="btn-primary text-sm">{{ accion }}</button>
+        <a href="{% url 'accounts:usuarios_lista' %}" class="btn-secondary text-sm">Cancelar</a>
+      </div>
+    </form>
+
+    {% if usuario_obj %}
+    <form method="post" class="mt-4 pt-4 border-t border-gray-100">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="toggle_activo">
+      <button type="submit" class="btn-danger text-sm">
+        {% if usuario_obj.is_active %}Desactivar usuario{% else %}Activar usuario{% endif %}
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

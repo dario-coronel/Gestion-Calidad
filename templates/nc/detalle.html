@@ -17,7 +17,29 @@
     {% endif %}
   </div>
   <div class="flex gap-2">
+    {% if puede_editar %}
     <a href="{% url 'nc:editar' nc.pk %}" class="btn-secondary text-xs">Editar</a>
+    {% endif %}
+    {% if puede_calidad and nc.estado == 'en_revision' %}
+    <form method="post" class="inline">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="revision_calidad">
+      <input type="hidden" name="decision" value="aprobar">
+      <button type="submit" class="btn-primary text-xs">Aprobar</button>
+    </form>
+    <form method="post" class="inline">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="revision_calidad">
+      <input type="hidden" name="decision" value="reenviar">
+      <button type="submit" class="btn-secondary text-xs">Reenviar</button>
+    </form>
+    <form method="post" class="inline">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="revision_calidad">
+      <input type="hidden" name="decision" value="rechazar">
+      <button type="submit" class="btn-danger text-xs">Rechazar</button>
+    </form>
+    {% endif %}
     {% if puede_cambiar_estado %}
     <form method="post" class="inline">
       {% csrf_token %}

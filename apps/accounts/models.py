@@ -34,3 +34,7 @@ class Usuario(AbstractUser):
     def es_admin(self):
         return self.rol == Rol.ADMIN
 
+    @property
+    def es_operario(self):
+        return self.rol == Rol.OPERARIO
+
