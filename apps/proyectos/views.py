@@ -1,4 +1,5 @@
-﻿from django.contrib.auth.decorators import login_required
+﻿from datetime import date as date_cls
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
@@ -13,6 +14,60 @@ COLORES_ESTADO = {
     EstadoProyecto.FINALIZADO: 'bg-success/10 text-success',
 }
 
+COLORES_PRIORIDAD_GANTT = {
+    'alta':  '#ef4444',   # red-500
+    'media': '#eab308',   # yellow-500
+    'baja':  '#22c55e',   # green-500
+}
+
+
+def _build_gantt(proyectos_list):
+    """Devuelve (gantt_items, gantt_header) listos para el template."""
+    all_dates = []
+    for p in proyectos_list:
+        if p.fecha_inicio:
+            all_dates.append(p.fecha_inicio)
+        if p.fecha_fin:
+            all_dates.append(p.fecha_fin)
+
+    if not all_dates:
+        return [], []
+
+    min_d = min(all_dates)
+    max_d = max(all_dates)
+    total = max((max_d - min_d).days, 1)
+
+    items = []
+    for p in proyectos_list:
+        if not (p.fecha_inicio and p.fecha_fin):
+            continue
+        offset = (p.fecha_inicio - min_d).days / total * 100
+        width  = p.dias_ejecucion / total * 100
+        items.append({
+            'pk':       p.pk,
+            'nombre':   f'{p.folio} · {p.nombre[:45]}',
+            'offset':   round(offset, 2),
+            'width':    max(round(width, 2), 0.5),
+            'color':    COLORES_PRIORIDAD_GANTT.get(p.prioridad, '#6b7280'),
+            'prioridad': p.get_prioridad_display(),
+            'estado':   p.get_estado_display(),
+            'avance':   p.porcentaje_avance,
+            'inicio':   p.fecha_inicio.strftime('%d/%m/%Y'),
+            'fin':      p.fecha_fin.strftime('%d/%m/%Y'),
+        })
+
+    # Marcadores de mes en el eje X
+    header = []
+    cur = date_cls(min_d.year, min_d.month, 1)
+    while cur <= max_d:
+        header.append({
+            'label':  cur.strftime('%b %Y'),
+            'offset': round((cur - min_d).days / total * 100, 2),
+        })
+        cur = date_cls(cur.year + (cur.month // 12), (cur.month % 12) + 1, 1)
+
+    return items, header
+
 
 @login_required
 def lista(request):
@@ -26,11 +81,16 @@ def lista(request):
     if q:
         qs = qs.filter(folio__icontains=q) | qs.filter(nombre__icontains=q)
 
+    proyectos_list = list(qs)
+    gantt_items, gantt_header = _build_gantt(proyectos_list)
+
     return render(request, 'proyectos/lista.html', {
-        'proyectos': qs,
+        'proyectos':    proyectos_list,
         'colores_estado': COLORES_ESTADO,
-        'estados': EstadoProyecto.choices,
-        'filtros': {'estado': estado, 'q': q},
+        'estados':      EstadoProyecto.choices,
+        'filtros':      {'estado': estado, 'q': q},
+        'gantt_items':  gantt_items,
+        'gantt_header': gantt_header,
     })
 
 

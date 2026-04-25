@@ -4,9 +4,10 @@
 {% block page_title %}Proyectos{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-5">
-  <div class="flex gap-2">
-    <form class="flex gap-2" method="get">
+{# ── Barra superior: filtros + toggle vista + nuevo ── #}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+  <div class="flex gap-2 flex-wrap">
+    <form class="flex gap-2" method="get" id="filtros-form">
       <input type="text" name="q" value="{{ filtros.q }}"
              placeholder="Folio o nombre..."
              class="form-input w-40 text-sm py-1.5">
@@ -17,32 +18,58 @@
         {% endfor %}
       </select>
     </form>
+
+    {# Toggle Lista / Gantt #}
+    {% if proyectos %}
+    <div class="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-medium">
+      <button id="btn-lista" onclick="setVista('lista')"
+              class="px-3 py-1.5 bg-teal-600 text-white transition-colors">
+        ☰ Lista
+      </button>
+      <button id="btn-gantt" onclick="setVista('gantt')"
+              class="px-3 py-1.5 bg-white text-gray-600 hover:bg-gray-50 transition-colors">
+        📊 Gantt
+      </button>
+    </div>
+    {% endif %}
   </div>
+
   {% if request.user.es_calidad or request.user.is_superuser %}
   <a href="{% url 'proyectos:crear' %}" class="btn-primary text-sm">+ Nuevo Proyecto</a>
   {% endif %}
 </div>
 
 {% if proyectos %}
+
+{# ══════════════════ VISTA LISTA ══════════════════ #}
+<div id="vista-lista">
 <div class="card overflow-hidden p-0">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 border-b border-gray-200">
       <tr>
         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Folio</th>
         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nombre</th>
-        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Origen</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Prioridad</th>
         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Avance</th>
-        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Inicio</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Inicio → Fin</th>
         <th class="px-4 py-3"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100">
       {% for p in proyectos %}
       <tr class="hover:bg-gray-50">
-        <td class="px-4 py-3 font-mono font-semibold">{{ p.folio }}</td>
-        <td class="px-4 py-3">{{ p.nombre }}</td>
-        <td class="px-4 py-3 text-gray-500">{{ p.get_origen_display }}</td>
+        <td class="px-4 py-3 font-mono font-semibold text-xs">{{ p.folio }}</td>
+        <td class="px-4 py-3 max-w-xs truncate">{{ p.nombre }}</td>
+        <td class="px-4 py-3">
+          <span class="inline-flex items-center gap-1 text-xs font-medium">
+            <span class="w-2 h-2 rounded-full inline-block
+              {% if p.prioridad == 'alta' %}bg-red-500
+              {% elif p.prioridad == 'media' %}bg-yellow-400
+              {% else %}bg-green-500{% endif %}"></span>
+            {{ p.get_prioridad_display }}
+          </span>
+        </td>
         <td class="px-4 py-3">
           <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
             {% if p.estado == 'finalizado' %}bg-green-100 text-green-700
@@ -54,21 +81,137 @@
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
             <div class="w-20 bg-gray-200 rounded-full h-1.5">
-              <div class="bg-teal-600 h-1.5 rounded-full" style="width: {{ p.porcentaje_avance }}%"></div>
+              <div class="h-1.5 rounded-full
+                {% if p.prioridad == 'alta' %}bg-red-500
+                {% elif p.prioridad == 'media' %}bg-yellow-400
+                {% else %}bg-green-500{% endif %}"
+                style="width: {{ p.porcentaje_avance }}%"></div>
             </div>
             <span class="text-xs text-gray-500">{{ p.porcentaje_avance }}%</span>
           </div>
         </td>
-        <td class="px-4 py-3 text-gray-500">{{ p.fecha_inicio|date:"d/m/Y" }}</td>
-        <td class="px-4 py-3"><a href="{% url 'proyectos:detalle' p.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver →</a></td>
+        <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+          {{ p.fecha_inicio|date:"d/m/Y" }}
+          {% if p.fecha_fin %} → {{ p.fecha_fin|date:"d/m/Y" }}{% endif %}
+        </td>
+        <td class="px-4 py-3">
+          <a href="{% url 'proyectos:detalle' p.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver →</a>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+</div>{# /vista-lista #}
+
+{# ══════════════════ VISTA GANTT ══════════════════ #}
+<div id="vista-gantt" style="display:none">
+  <div class="card p-0 overflow-x-auto">
+    {# Leyenda #}
+    <div class="flex items-center gap-4 px-5 py-3 border-b border-gray-100 text-xs text-gray-600">
+      <span class="font-semibold text-gray-700">Prioridad:</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-red-500 inline-block"></span> Alta</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-yellow-400 inline-block"></span> Media</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-green-500 inline-block"></span> Baja</span>
+    </div>
+
+    <div class="px-4 pb-4 pt-3" style="min-width: 700px;">
+      {% if gantt_items %}
+
+      {# Eje X – marcadores de mes #}
+      <div class="relative h-6 mb-1 ml-48">
+        {% for m in gantt_header %}
+        <span class="absolute text-xs text-gray-400 whitespace-nowrap"
+              style="left: {{ m.offset }}%">{{ m.label }}</span>
+        {% endfor %}
+      </div>
+
+      {# Líneas verticales de mes + barras #}
+      <div class="relative">
+        {# Líneas de mes #}
+        <div class="absolute inset-0 ml-48 pointer-events-none">
+          {% for m in gantt_header %}
+          <div class="absolute top-0 bottom-0 border-l border-gray-100"
+               style="left: {{ m.offset }}%"></div>
+          {% endfor %}
+        </div>
+
+        {# Filas de proyectos #}
+        {% for item in gantt_items %}
+        <div class="flex items-center mb-2 group">
+          {# Nombre — columna fija #}
+          <a href="{% url 'proyectos:detalle' item.pk %}"
+             class="w-48 flex-shrink-0 text-xs text-gray-700 truncate pr-3 group-hover:text-teal-700"
+             title="{{ item.nombre }}">
+            {{ item.nombre }}
+          </a>
+
+          {# Barra Gantt #}
+          <div class="relative flex-1 h-7">
+            <div class="absolute top-0.5 h-6 rounded flex items-center px-2 cursor-pointer transition-opacity hover:opacity-80"
+                 style="left: {{ item.offset }}%; width: {{ item.width }}%; min-width: 4px; background-color: {{ item.color }};"
+                 title="{{ item.nombre }} | {{ item.inicio }} → {{ item.fin }} | {{ item.estado }} | {{ item.avance }}%">
+
+              {# Texto dentro de la barra si hay espacio #}
+              {% if item.width > 8 %}
+              <span class="text-white text-xs font-medium truncate select-none">{{ item.avance }}%</span>
+              {% endif %}
+            </div>
+
+            {# Franja de avance (overlay más oscuro) #}
+            {% if item.avance > 0 %}
+            <div class="absolute top-0.5 h-6 rounded-l pointer-events-none"
+                 style="left: {{ item.offset }}%; width: calc({{ item.width }}% * {{ item.avance }} / 100); min-width: 0; background-color: rgba(0,0,0,0.2);"></div>
+            {% endif %}
+          </div>
+
+          {# Fechas #}
+          <div class="w-32 flex-shrink-0 text-xs text-gray-400 pl-3 whitespace-nowrap">
+            {{ item.inicio }} → {{ item.fin }}
+          </div>
+        </div>
+        {% endfor %}
+
+      </div>{# /relative #}
+      {% else %}
+      <p class="text-sm text-gray-400 text-center py-8">No hay proyectos con fechas definidas.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>{# /vista-gantt #}
+
 {% else %}
 <div class="card text-center py-16">
   <p class="text-sm text-gray-400">No hay proyectos registrados.</p>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function setVista(v) {
+    const lista = document.getElementById('vista-lista');
+    const gantt = document.getElementById('vista-gantt');
+    const btnL  = document.getElementById('btn-lista');
+    const btnG  = document.getElementById('btn-gantt');
+    if (v === 'gantt') {
+      lista.style.display = 'none';
+      gantt.style.display = 'block';
+      btnL.className = 'px-3 py-1.5 bg-white text-gray-600 hover:bg-gray-50 transition-colors';
+      btnG.className = 'px-3 py-1.5 bg-teal-600 text-white transition-colors';
+      localStorage.setItem('proyectos_vista', 'gantt');
+    } else {
+      lista.style.display = 'block';
+      gantt.style.display = 'none';
+      btnL.className = 'px-3 py-1.5 bg-teal-600 text-white transition-colors';
+      btnG.className = 'px-3 py-1.5 bg-white text-gray-600 hover:bg-gray-50 transition-colors';
+      localStorage.setItem('proyectos_vista', 'lista');
+    }
+  }
+  // Restaurar vista preferida
+  document.addEventListener('DOMContentLoaded', function() {
+    var pref = localStorage.getItem('proyectos_vista');
+    if (pref === 'gantt') setVista('gantt');
+  });
+</script>
 {% endblock %}
