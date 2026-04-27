@@ -56,37 +56,49 @@
 
       <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Gestión</p>
 
+      {% if request.user.has_perm('nc.view_noconformidad') or request.user.has_perm('nc.add_noconformidad') %}
       <a href="{% url 'nc:lista' %}"
          class="nav-link {% if active_app == 'nc' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
         No Conformidades
       </a>
+      {% endif %}
 
+      {% if request.user.has_perm('qr.view_quejareclamo') or request.user.has_perm('qr.add_quejareclamo') %}
       <a href="{% url 'qr:lista' %}"
          class="nav-link {% if active_app == 'qr' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"/></svg>
         Quejas y Reclamos
       </a>
+      {% endif %}
 
+      {% if request.user.has_perm('om.view_oportunidadmejora') or request.user.has_perm('om.add_oportunidadmejora') %}
       <a href="{% url 'om:lista' %}"
          class="nav-link {% if active_app == 'om' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         Mejoras (OM)
       </a>
+      {% endif %}
 
+      {% if request.user.has_perm('proyectos.view_proyecto') or request.user.has_perm('proyectos.add_proyecto') or request.user.has_perm('verificacion.view_verificacioneficacia') %}
       <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Proyectos</p>
+      {% endif %}
 
+      {% if request.user.has_perm('proyectos.view_proyecto') or request.user.has_perm('proyectos.add_proyecto') %}
       <a href="{% url 'proyectos:lista' %}"
          class="nav-link {% if active_app == 'proyectos' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
         Proyectos
       </a>
+      {% endif %}
 
+      {% if request.user.has_perm('verificacion.view_verificacioneficacia') %}
       <a href="{% url 'verificacion:lista' %}"
          class="nav-link {% if active_app == 'verificacion' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Verif. Eficacia
       </a>
+      {% endif %}
 
       <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Reportes</p>
 
@@ -99,9 +111,14 @@
       {% if request.user.es_admin or request.user.is_superuser %}
       <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Administración</p>
       <a href="{% url 'accounts:usuarios_lista' %}"
-         class="nav-link {% if active_app == 'accounts' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        class="nav-link {% if active_app == 'accounts' and request.resolver_match.url_name != 'roles_lista' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V4H2v16h5m10 0v-2a4 4 0 00-8 0v2m8 0H9m8-10a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         Usuarios
+      </a>
+      <a href="{% url 'accounts:roles_lista' %}"
+        class="nav-link {% if active_app == 'accounts' and request.resolver_match.url_name == 'roles_lista' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0118 12.5c0 3.176-2.447 5.5-6 5.5s-6-2.324-6-5.5c0-.678.065-1.319.184-1.922L12 14zm0 0v5"/></svg>
+        Roles
       </a>
       <a href="{% url 'core:sectores_lista' %}"
          class="nav-link {% if active_app == 'core' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
