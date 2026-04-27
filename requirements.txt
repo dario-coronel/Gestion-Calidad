@@ -12,8 +12,7 @@ openpyxl==3.1.5
 plotly==6.7.0
 
 # ─── Utilidades ────────────────────────────────────────────
-pillow==12.2.0
-
+pillow==12.2.0apscheduler==3.10.4
 # ─── Dev / Demo (Streamlit — mantener hasta migración completa) ──
 streamlit
 pandas

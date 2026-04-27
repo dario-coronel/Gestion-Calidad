@@ -33,6 +33,7 @@ urlpatterns = [
     path('verificacion/', include('apps.verificacion.urls')),
     path('notificaciones/', include('apps.notificaciones.urls')),
     path('reportes/', include('apps.reportes.urls')),
+    path('backups/', include('apps.backups.urls')),
 ]
 
 if settings.DEBUG:
