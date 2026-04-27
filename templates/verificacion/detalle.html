@@ -99,8 +99,15 @@
       {% endif %}
     </div>
 
+    {% if ver.nc_generada %}
+    <div class="card border-l-4 border-orange-400 space-y-2">
+      <h3 class="text-sm font-semibold text-orange-700">NC generada por verificación no eficaz</h3>
+      <a href="{% url 'nc:detalle' ver.nc_generada.pk %}" class="text-teal-700 hover:underline text-sm font-mono">{{ ver.nc_generada.folio }}</a>
+    </div>
+    {% endif %}
+
     <!-- Si No Eficaz: sugerir crear nueva NC -->
-    {% if ver.estado == 'no_eficaz' %}
+    {% if ver.estado == 'no_eficaz' and not ver.nc_generada %}
     <div class="card border border-red-200 bg-red-50 space-y-2">
       <h3 class="text-sm font-semibold text-red-700">Acción requerida</h3>
       <p class="text-sm text-red-600">La verificación resultó No Eficaz. Se recomienda generar una nueva No Conformidad para re-analizar la causa raíz.</p>

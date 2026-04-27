@@ -1,6 +1,6 @@
 ﻿from django.db import models
 from django.utils import timezone
-from apps.core.models import ModeloBase
+from apps.core.models import ModeloBase, Sector
 from django.conf import settings
 
 
@@ -24,7 +24,11 @@ class QuejaReclamo(ModeloBase):
     """Queja o Reclamo de cliente. No incluye 5 Porqués ni Matriz de Riesgo."""
     folio = models.CharField(max_length=20, unique=True, editable=False)
     fecha = models.DateField(default=timezone.now)
-    area_origen = models.CharField(max_length=100)
+    sector = models.ForeignKey(
+        Sector, on_delete=models.PROTECT,
+        null=True, blank=True, related_name='qr_sector',
+        verbose_name='Sector de origen'
+    )
     responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
         related_name='qr_responsable'
@@ -40,6 +44,14 @@ class QuejaReclamo(ModeloBase):
     clasificacion = models.CharField(max_length=100, blank=True)
     estado = models.CharField(max_length=20, choices=EstadoQR, default=EstadoQR.BORRADOR)
     dias_resolucion = models.PositiveIntegerField(null=True, blank=True)
+
+    # Recepción y gestión
+    quien_recibe = models.CharField('Quién recibe la queja', max_length=200, blank=True)
+    detalle_visita_cliente = models.TextField('Detalle visita al cliente', blank=True)
+    acciones_a_tomar = models.TextField('Acciones a tomar', blank=True)
+    resultado = models.TextField('Resultado', blank=True)
+    envio_mail = models.BooleanField('Envío de mail al cliente', default=False)
+    fecha_cierre = models.DateField('Fecha de cierre', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Queja y Reclamo'

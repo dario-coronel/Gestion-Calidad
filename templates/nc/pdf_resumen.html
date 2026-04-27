@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>{{ nc.folio }} — Resumen NC</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; padding: 20px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start;
+           border-bottom: 3px solid #0f766e; padding-bottom: 10px; margin-bottom: 16px; }
+  header h1 { font-size: 18px; color: #0f766e; }
+  header .meta { text-align: right; font-size: 10px; color: #555; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px;
+           font-weight: bold; background: #e2f0ef; color: #0f766e; }
+  .section { margin-bottom: 14px; }
+  .section-title { font-size: 10px; font-weight: bold; text-transform: uppercase;
+                   letter-spacing: 0.05em; color: #0f766e; border-bottom: 1px solid #c8e6e4;
+                   padding-bottom: 3px; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 4px 6px; vertical-align: top; }
+  td.lbl { width: 38%; font-weight: bold; color: #444; }
+  td.val { color: #111; }
+  .riesgo-bajo  { color: #16a34a; font-weight: bold; }
+  .riesgo-medio { color: #d97706; font-weight: bold; }
+  .riesgo-alto  { color: #dc2626; font-weight: bold; }
+  .campo-texto { background: #f8f8f8; padding: 6px; border-radius: 4px; white-space: pre-wrap; }
+  footer { margin-top: 24px; border-top: 1px solid #ddd; padding-top: 8px;
+           font-size: 9px; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>No Conformidad — Resumen</h1>
+    <div style="margin-top:4px">
+      <span class="badge">{{ nc.folio }}</span>
+      <span style="margin-left:8px;font-size:10px;color:#555">{{ nc.get_estado_display }}</span>
+    </div>
+  </div>
+  <div class="meta">
+    <div><strong>Fecha:</strong> {{ nc.fecha }}</div>
+    <div><strong>Sector:</strong> {{ nc.sector.nombre|default:"—" }}</div>
+    <div><strong>Responsable:</strong> {{ nc.responsable.get_full_name }}</div>
+    <div style="margin-top:4px;font-size:9px;color:#aaa">Impreso: {% now "d/m/Y H:i" %}</div>
+  </div>
+</header>
+
+<div class="section">
+  <div class="section-title">Identificación</div>
+  <table>
+    <tr>
+      <td class="lbl">Clasificación</td>
+      <td class="val">{{ nc.get_clasificacion_display }}</td>
+      <td class="lbl">Prioridad</td>
+      <td class="val">{{ nc.get_prioridad_display }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">ID Muestra / Lote</td>
+      <td class="val">{{ nc.id_muestra_lote|default:"—" }}</td>
+      <td class="lbl">Parámetro afectado</td>
+      <td class="val">{{ nc.parametro_afectado|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Origen</td>
+      <td class="val">{{ nc.get_origen_display }}</td>
+      <td class="lbl">NC origen</td>
+      <td class="val">{{ nc.nc_origen.folio|default:"—" }}</td>
+    </tr>
+    {% if nc.qr_relacionada %}
+    <tr>
+      <td class="lbl">QyR asociada</td>
+      <td class="val" colspan="3">{{ nc.qr_relacionada.folio }}</td>
+    </tr>
+    {% endif %}
+    {% if nc.om_relacionada %}
+    <tr>
+      <td class="lbl">OM asociada</td>
+      <td class="val" colspan="3">{{ nc.om_relacionada.folio }}</td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">Descripción del Problema</div>
+  <div class="campo-texto">{{ nc.descripcion }}</div>
+</div>
+
+<div class="section">
+  <div class="section-title">Corrección Inmediata</div>
+  <div class="campo-texto">{{ nc.descripcion_correccion|default:"Sin corrección registrada." }}</div>
+</div>
+
+<div class="section">
+  <div class="section-title">Matriz de Riesgo</div>
+  <table>
+    <tr>
+      <td class="lbl">Probabilidad</td>
+      <td class="val">{{ nc.probabilidad|default:"—" }}</td>
+      <td class="lbl">Impacto</td>
+      <td class="val">{{ nc.impacto|default:"—" }}</td>
+      <td class="lbl">Riesgo calculado</td>
+      <td class="val">
+        {% if nc.riesgo_calculado %}
+          {% if nc.riesgo_calculado >= 15 %}<span class="riesgo-alto">{{ nc.riesgo_calculado }} (Alto)</span>
+          {% elif nc.riesgo_calculado >= 8 %}<span class="riesgo-medio">{{ nc.riesgo_calculado }} (Medio)</span>
+          {% else %}<span class="riesgo-bajo">{{ nc.riesgo_calculado }} (Bajo)</span>
+          {% endif %}
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">Eficacia</div>
+  <table>
+    <tr>
+      <td class="lbl">Estado de eficacia</td>
+      <td class="val">{{ nc.get_eficacia_display }}</td>
+    </tr>
+    {% if nc.evidencia %}
+    <tr>
+      <td class="lbl">Evidencia</td>
+      <td class="val">{{ nc.evidencia }}</td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+
+{% if nc.contaminacion_cruzada %}
+<div class="section">
+  <div class="section-title">Contaminación Cruzada</div>
+  <table>
+    <tr>
+      <td class="lbl">Tipo</td>
+      <td class="val">{{ nc.get_tipo_contaminacion_display }}</td>
+    </tr>
+    {% if nc.obs_contaminacion %}
+    <tr>
+      <td class="lbl">Observaciones</td>
+      <td class="val">{{ nc.obs_contaminacion }}</td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+{% endif %}
+
+<footer>
+  SGC EDP Agroindustrial — {{ nc.folio }} — Resumen generado el {% now "d/m/Y \a \l\a\s H:i" %}
+</footer>
+</body>
+</html>

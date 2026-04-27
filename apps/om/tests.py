@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import Usuario, Rol
+from apps.core.models import Sector
 from apps.om.models import OportunidadMejora, EstadoOM, ClasificacionOM
 
 
@@ -19,12 +20,13 @@ class OMRoleWorkflowTests(TestCase):
             rol=Rol.CALIDAD,
             is_active=True,
         )
+        self.sector, _ = Sector.objects.get_or_create(nombre='Produccion Balanceado')
 
     def test_operario_crea_om_en_revision(self):
         self.client.login(username='om_operario', password='Operario1234!')
         payload = {
             'fecha': '2026-04-24',
-            'sector': 'Produccion',
+            'sector': self.sector.pk,
             'responsable': self.operario.pk,
             'clasificacion': ClasificacionOM.CALIDAD,
             'descripcion': 'OM de prueba',
@@ -37,7 +39,7 @@ class OMRoleWorkflowTests(TestCase):
 
     def test_calidad_rechaza_om(self):
         om = OportunidadMejora.objects.create(
-            sector='Produccion',
+            sector=self.sector,
             responsable=self.operario,
             clasificacion=ClasificacionOM.CALIDAD,
             descripcion='OM para rechazo',

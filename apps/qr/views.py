@@ -2,6 +2,8 @@
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 from .models import QuejaReclamo, EstadoQR
 from .forms import QuejaReclamoForm, AdjuntoQRForm
@@ -95,8 +97,10 @@ def detalle(request, pk):
             nuevo_estado = request.POST.get('nuevo_estado')
             if nuevo_estado in dict(EstadoQR.choices):
                 qr.estado = nuevo_estado
+                if nuevo_estado == EstadoQR.CERRADO and not qr.fecha_cierre:
+                    qr.fecha_cierre = timezone.now().date()
                 qr.actualizado_por = request.user
-                qr.save(update_fields=['estado', 'actualizado_por', 'actualizado_en'])
+                qr.save(update_fields=['estado', 'fecha_cierre', 'actualizado_por', 'actualizado_en'])
                 messages.success(request, f'Estado actualizado a: {qr.get_estado_display()}')
                 return redirect('qr:detalle', pk=pk)
 
@@ -160,4 +164,22 @@ def editar(request, pk):
         'accion': 'Guardar cambios',
         'qr': qr,
     })
+
+
+# ── PDF ───────────────────────────────────────────────────────────────────────
+
+@login_required
+def pdf(request, pk):
+    """Exporta el registro completo de la QyR en PDF."""
+    qr = get_object_or_404(QuejaReclamo, pk=pk, eliminado=False)
+    try:
+        from weasyprint import HTML as WP_HTML
+        html_string = render_to_string('qr/pdf.html', {'qr': qr}, request=request)
+        pdf_bytes = WP_HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{qr.folio}.pdf"'
+        return response
+    except Exception as exc:
+        messages.error(request, f'Error al generar PDF: {exc}')
+        return redirect('qr:detalle', pk=pk)
 

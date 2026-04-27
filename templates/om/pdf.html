@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>{{ om.folio }} — Oportunidad de Mejora</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; padding: 20px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start;
+           border-bottom: 3px solid #0f766e; padding-bottom: 12px; margin-bottom: 18px; }
+  header h1 { font-size: 20px; color: #0f766e; }
+  header .meta { text-align: right; font-size: 10px; color: #555; line-height: 1.6; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px;
+           font-weight: bold; background: #e2f0ef; color: #0f766e; }
+  .section { margin-bottom: 16px; page-break-inside: avoid; }
+  .section-title { font-size: 10px; font-weight: bold; text-transform: uppercase;
+                   letter-spacing: 0.06em; color: #0f766e; border-bottom: 1px solid #c8e6e4;
+                   padding-bottom: 4px; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 4px 6px; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+  td.lbl { width: 32%; font-weight: bold; color: #444; background: #f9f9f9; }
+  td.val { color: #111; }
+  .campo-texto { background: #f8f8f8; padding: 8px; border-radius: 4px;
+                 white-space: pre-wrap; border-left: 3px solid #c8e6e4; }
+  .eficaz    { color: #16a34a; font-weight: bold; }
+  .no-eficaz { color: #dc2626; font-weight: bold; }
+  footer { margin-top: 24px; border-top: 1px solid #ddd; padding-top: 8px;
+           font-size: 9px; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Oportunidad de Mejora</h1>
+    <div style="margin-top:6px">
+      <span class="badge">{{ om.folio }}</span>
+      <span style="margin-left:8px;font-size:10px;color:#555">Estado: <strong>{{ om.get_estado_display }}</strong></span>
+      <span style="margin-left:12px;font-size:10px;color:#555">Eficacia: <strong>{{ om.get_eficacia_display }}</strong></span>
+    </div>
+    {% if om.om_origen %}
+    <div style="margin-top:4px;font-size:10px;color:#b45309">
+      Seguimiento de OM anterior: <strong>{{ om.om_origen.folio }}</strong>
+    </div>
+    {% endif %}
+  </div>
+  <div class="meta">
+    <div><strong>Fecha:</strong> {{ om.fecha|date:"d/m/Y" }}</div>
+    <div><strong>Sector:</strong> {{ om.sector.nombre|default:"—" }}</div>
+    <div><strong>Responsable:</strong> {{ om.responsable.get_full_name|default:om.responsable.username }}</div>
+    <div style="margin-top:4px;font-size:9px;color:#aaa">Impreso: {% now "d/m/Y H:i" %}</div>
+  </div>
+</header>
+
+{# ── SECCIÓN 1: Identificación ── #}
+<div class="section">
+  <div class="section-title">1. Identificación</div>
+  <table>
+    <tr>
+      <td class="lbl">Clasificación</td>
+      <td class="val">{{ om.get_clasificacion_display }}</td>
+      <td class="lbl">Beneficio potencial</td>
+      <td class="val">{{ om.get_beneficio_potencial_display|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Rango de evaluación</td>
+      <td class="val">{{ om.get_rango_evaluacion_display|default:"—" }}</td>
+      <td class="lbl">Fecha de evaluación</td>
+      <td class="val">{{ om.fecha_evaluacion|date:"d/m/Y"|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Fecha de implementación</td>
+      <td class="val">{{ om.fecha_implementacion|date:"d/m/Y"|default:"—" }}</td>
+      <td class="lbl">Eficacia</td>
+      <td class="val">
+        {% if om.eficacia == 'eficaz' %}<span class="eficaz">Eficaz</span>
+        {% elif om.eficacia == 'no_eficaz' %}<span class="no-eficaz">No Eficaz</span>
+        {% else %}Pendiente{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td class="lbl">Creado por</td>
+      <td class="val">{{ om.creado_por.get_full_name|default:"—" }}</td>
+      <td class="lbl">Última actualización</td>
+      <td class="val">{{ om.actualizado_en|date:"d/m/Y H:i" }}</td>
+    </tr>
+  </table>
+</div>
+
+{# ── SECCIÓN 2: Descripción ── #}
+<div class="section">
+  <div class="section-title">2. Descripción de la Oportunidad</div>
+  <div class="campo-texto">{{ om.descripcion }}</div>
+</div>
+
+{# ── SECCIÓN 3: Problema a mejorar ── #}
+{% if om.problema_a_mejorar %}
+<div class="section">
+  <div class="section-title">3. Problema a Mejorar</div>
+  <div class="campo-texto">{{ om.problema_a_mejorar }}</div>
+</div>
+{% endif %}
+
+{# ── SECCIÓN 4: Seguimiento y evidencia ── #}
+{% if om.seguimiento or om.evidencia %}
+<div class="section">
+  <div class="section-title">4. Seguimiento y Evidencia</div>
+  {% if om.seguimiento %}
+  <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Seguimiento</p>
+  <div class="campo-texto" style="margin-bottom:10px">{{ om.seguimiento }}</div>
+  {% endif %}
+  {% if om.evidencia %}
+  <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Evidencia</p>
+  <div class="campo-texto">{{ om.evidencia }}</div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── OMs generadas ── #}
+{% if om.om_generadas.exists %}
+<div class="section">
+  <div class="section-title">OMs generadas (No Eficaz)</div>
+  <table>
+    {% for nueva in om.om_generadas.all %}
+    <tr>
+      <td class="lbl">Folio</td>
+      <td class="val">{{ nueva.folio }}</td>
+      <td class="lbl">Fecha</td>
+      <td class="val">{{ nueva.fecha|date:"d/m/Y" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<footer>SGC — EDP Agroindustrial &nbsp;|&nbsp; {{ om.folio }} &nbsp;|&nbsp; Generado el {% now "d/m/Y H:i" %}</footer>
+
+</body>
+</html>

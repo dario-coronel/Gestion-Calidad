@@ -9,24 +9,65 @@ class ProyectoForm(forms.ModelForm):
     class Meta:
         model = Proyecto
         fields = [
-            'nombre', 'prioridad', 'responsable', 'fecha_inicio',
-            'dias_ejecucion', 'proveedor', 'origen',
+            'nombre', 'sector', 'prioridad', 'responsable', 'fecha_inicio',
+            'dias_ejecucion', 'proveedor', 'origen', 'nc', 'om',
         ]
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Nombre del proyecto'}),
+            'sector': forms.Select(attrs={'class': 'form-input'}),
             'prioridad': forms.Select(attrs={'class': 'form-input'}),
             'responsable': forms.Select(attrs={'class': 'form-input'}),
             'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
             'dias_ejecucion': forms.NumberInput(attrs={'class': 'form-input', 'placeholder': 'Ej: 30', 'min': 1}),
             'proveedor': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Proveedor externo o Interno'}),
-            'origen': forms.Select(attrs={'class': 'form-input'}),
+            'origen': forms.Select(attrs={'class': 'form-input', 'id': 'id_origen_proyecto'}),
+            'nc': forms.Select(attrs={'class': 'form-input'}),
+            'om': forms.Select(attrs={'class': 'form-input'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from apps.accounts.models import Usuario
+        from apps.core.models import Sector
+        from apps.nc.models import NoConformidad, EstadoNC
+        from apps.om.models import OportunidadMejora
+
+        self.fields['sector'].queryset = Sector.objects.filter(activo=True).order_by('nombre')
+        self.fields['sector'].empty_label = 'Seleccionar sector...'
+        self.fields['sector'].required = False
         self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
+        self.fields['nc'].queryset = NoConformidad.objects.filter(
+            eliminado=False,
+            estado=EstadoNC.APROBADA,
+        ).order_by('-fecha')
+        self.fields['nc'].required = False
+        self.fields['nc'].empty_label = 'Seleccionar NC...'
+        self.fields['om'].queryset = OportunidadMejora.objects.filter(eliminado=False).order_by('-fecha')
+        self.fields['om'].required = False
+        self.fields['om'].empty_label = 'Seleccionar OM...'
+
+        if self.instance.pk and self.instance.nc_id:
+            self.fields['nc'].queryset = self.fields['nc'].queryset | self.fields['nc'].queryset.model.objects.filter(pk=self.instance.nc_id)
+
+    def clean(self):
+        cleaned = super().clean()
+        origen = cleaned.get('origen')
+        nc = cleaned.get('nc')
+        om = cleaned.get('om')
+
+        if origen == 'nc' and not nc:
+            self.add_error('nc', 'Seleccioná la No Conformidad de origen.')
+        if origen == 'om' and not om:
+            self.add_error('om', 'Seleccioná la Oportunidad de Mejora de origen.')
+        if origen == 'independiente':
+            cleaned['nc'] = None
+            cleaned['om'] = None
+        elif origen == 'nc':
+            cleaned['om'] = None
+        elif origen == 'om':
+            cleaned['nc'] = None
+        return cleaned
 
 
 class SubtareaForm(forms.ModelForm):

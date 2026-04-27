@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import Usuario, Rol
+from apps.core.models import Sector
 from apps.qr.models import QuejaReclamo, EstadoQR, TipoReclamo
 
 
@@ -19,12 +20,13 @@ class QRRoleWorkflowTests(TestCase):
             rol=Rol.CALIDAD,
             is_active=True,
         )
+        self.sector, _ = Sector.objects.get_or_create(nombre='Comercial')
 
     def test_operario_crea_qr_en_revision(self):
         self.client.login(username='qr_operario', password='Operario1234!')
         payload = {
             'fecha': '2026-04-24',
-            'area_origen': 'Ventas',
+            'sector': self.sector.pk,
             'responsable': self.operario.pk,
             'id_cliente_pedido': 'CLI-001/PED-001',
             'tipo_reclamo': TipoReclamo.OTRO,
@@ -39,7 +41,7 @@ class QRRoleWorkflowTests(TestCase):
 
     def test_calidad_acepta_qr_y_pasa_a_seguimiento(self):
         qr = QuejaReclamo.objects.create(
-            area_origen='Ventas',
+            sector=self.sector,
             responsable=self.operario,
             id_cliente_pedido='CLI-001/PED-001',
             tipo_reclamo=TipoReclamo.OTRO,

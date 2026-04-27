@@ -2,9 +2,12 @@
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
-from .models import NoConformidad, CincoPorques, EstadoNC
-from .forms import NoConformidadForm, CincoPorquesForm, MatrizRiesgoForm, AdjuntoNCForm
+from .models import NoConformidad, CincoPorques, EstadoNC, EficaciaNC
+from .forms import NoConformidadForm, CincoPorquesForm, MatrizRiesgoForm, AdjuntoNCForm, EficaciaForm
+from apps.core.models import Sector
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -38,15 +41,15 @@ def lista(request):
     # Filtros
     estado = request.GET.get('estado', '')
     prioridad = request.GET.get('prioridad', '')
-    area = request.GET.get('area', '')
+    sector = request.GET.get('sector', '')
     q = request.GET.get('q', '')
 
     if estado:
         qs = qs.filter(estado=estado)
     if prioridad:
         qs = qs.filter(prioridad=prioridad)
-    if area:
-        qs = qs.filter(area__icontains=area)
+    if sector:
+        qs = qs.filter(sector_id=sector)
     if q:
         qs = qs.filter(folio__icontains=q) | qs.filter(descripcion__icontains=q)
 
@@ -55,7 +58,8 @@ def lista(request):
         'colores_estado': COLORES_ESTADO,
         'estados': EstadoNC.choices,
         'prioridades': NoConformidad._meta.get_field('prioridad').choices,
-        'filtros': {'estado': estado, 'prioridad': prioridad, 'area': area, 'q': q},
+        'sectores': Sector.objects.filter(activo=True).order_by('nombre'),
+        'filtros': {'estado': estado, 'prioridad': prioridad, 'sector': sector, 'q': q},
     }
 
     # Respuesta parcial para HTMX
@@ -114,6 +118,9 @@ def crear(request):
 def detalle(request, pk):
     nc = get_object_or_404(NoConformidad, pk=pk, eliminado=False)
     cinco_p = getattr(nc, 'cinco_porques', None)
+    # Auto-crear 5 Porqués si no existe (NCs importadas, seed, migradas, etc.)
+    if cinco_p is None and (request.user.es_calidad or request.user.is_superuser):
+        cinco_p = CincoPorques.objects.create(nc=nc, etapa_1=nc.descripcion)
     cinco_form = None
     matriz_form = None
     puede_calidad = request.user.es_calidad or request.user.is_superuser
@@ -176,12 +183,53 @@ def detalle(request, pk):
                 messages.success(request, msg)
                 return redirect('nc:detalle', pk=pk)
 
+        # Evaluar eficacia de la acción correctiva (solo calidad/admin)
+        elif accion == 'marcar_eficacia' and puede_calidad:
+            eficacia_form = EficaciaForm(request.POST, instance=nc)
+            if eficacia_form.is_valid():
+                nc_guardada = eficacia_form.save(commit=False)
+                nueva_eficacia = nc_guardada.eficacia
+
+                if nueva_eficacia == EficaciaNC.NO_EFICAZ:
+                    # Cerrar NC actual y abrir una nueva vinculada
+                    nc_guardada.estado = EstadoNC.CERRADA
+                    nc_guardada.actualizado_por = request.user
+                    nc_guardada.save()
+                    nueva_nc = NoConformidad.objects.create(
+                        fecha=timezone.now().date(),
+                        sector=nc.sector,
+                        responsable=nc.responsable,
+                        descripcion=f'Seguimiento de {nc.folio} (No Eficaz): {nc.descripcion}',
+                        prioridad=nc.prioridad,
+                        clasificacion=nc.clasificacion,
+                        origen=nc.origen,
+                        qr_relacionada=nc.qr_relacionada,
+                        om_relacionada=nc.om_relacionada,
+                        nc_origen=nc,
+                        estado=EstadoNC.BORRADOR,
+                        creado_por=request.user,
+                        actualizado_por=request.user,
+                    )
+                    CincoPorques.objects.create(nc=nueva_nc, etapa_1=nueva_nc.descripcion)
+                    messages.warning(
+                        request,
+                        f'NC marcada como No Eficaz. Se generó la nueva NC {nueva_nc.folio} para seguimiento.'
+                    )
+                    return redirect('nc:detalle', pk=nueva_nc.pk)
+                else:
+                    nc_guardada.actualizado_por = request.user
+                    nc_guardada.save()
+                    messages.success(request, f'Eficacia actualizada: {nc_guardada.get_eficacia_display()}')
+                    return redirect('nc:detalle', pk=pk)
+
     # Solo mostrar form editable a calidad/admin
+    eficacia_form = None
     if puede_calidad:
         if not cinco_form and cinco_p:
             cinco_form = CincoPorquesForm(instance=cinco_p)
         if not matriz_form:
             matriz_form = MatrizRiesgoForm(instance=nc)
+        eficacia_form = EficaciaForm(instance=nc)
 
     etapas = [
         ('etapa_1', '¿Por qué? (1º nivel)'),
@@ -195,6 +243,7 @@ def detalle(request, pk):
         'nc': nc,
         'cinco_form': cinco_form,
         'matriz_form': matriz_form,
+        'eficacia_form': eficacia_form,
         'cinco_p': cinco_p,
         'etapas': etapas,
         'color_estado': COLORES_ESTADO.get(nc.estado, ''),
@@ -242,4 +291,46 @@ def editar(request, pk):
         'titulo': f'Editar {nc.folio}',
         'accion': 'Guardar cambios',
     })
+
+
+# ── PDF ───────────────────────────────────────────────────────────────────────
+
+@login_required
+def pdf_resumen(request, pk):
+    """Exporta un resumen en PDF de una sola página (datos clave)."""
+    nc = get_object_or_404(NoConformidad, pk=pk, eliminado=False)
+    try:
+        from weasyprint import HTML as WP_HTML
+        html_string = render_to_string('nc/pdf_resumen.html', {
+            'nc': nc,
+            'color_riesgo': _color_riesgo(nc.riesgo_calculado),
+        }, request=request)
+        pdf_bytes = WP_HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{nc.folio}_resumen.pdf"'
+        return response
+    except Exception as exc:
+        messages.error(request, f'Error al generar PDF: {exc}')
+        return redirect('nc:detalle', pk=pk)
+
+
+@login_required
+def pdf_completo(request, pk):
+    """Exporta el registro completo de la NC en PDF (todos los campos + 5 Porqués)."""
+    nc = get_object_or_404(NoConformidad, pk=pk, eliminado=False)
+    cinco_p = getattr(nc, 'cinco_porques', None)
+    try:
+        from weasyprint import HTML as WP_HTML
+        html_string = render_to_string('nc/pdf_completo.html', {
+            'nc': nc,
+            'cinco_p': cinco_p,
+            'color_riesgo': _color_riesgo(nc.riesgo_calculado),
+        }, request=request)
+        pdf_bytes = WP_HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{nc.folio}_completo.pdf"'
+        return response
+    except Exception as exc:
+        messages.error(request, f'Error al generar PDF: {exc}')
+        return redirect('nc:detalle', pk=pk)
 

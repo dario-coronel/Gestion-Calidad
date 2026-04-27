@@ -2,7 +2,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
 
 from .forms import UsuarioCreateForm, UsuarioUpdateForm
 from .models import Usuario
@@ -14,7 +13,7 @@ class SGCLoginView(LoginView):
 
 
 class SGCLogoutView(LogoutView):
-    next_page = reverse_lazy('accounts:login')
+    next_page = '/'
 
 
 def _es_admin_sistema(user):

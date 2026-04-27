@@ -107,7 +107,7 @@
                     <p class="font-semibold text-gray-300 mb-0.5">P={{ cell.prob }} × I={{ cell.imp }} = {{ cell.riesgo }}</p>
                     {% for nc in cell.ncs %}
                     <p>• <a href="{% url 'nc:detalle' nc.pk %}" class="underline hover:text-teal-300 pointer-events-auto">{{ nc.folio }}</a>
-                      <span class="text-gray-400">{{ nc.area }}</span></p>
+                      <span class="text-gray-400">{{ nc.sector }}</span></p>
                     {% endfor %}
                   </div>
                 {% else %}
@@ -139,7 +139,7 @@
       <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
         <tr>
           <th class="px-4 py-2 text-left">Folio</th>
-          <th class="px-4 py-2 text-left">Área</th>
+          <th class="px-4 py-2 text-left">Sector</th>
           <th class="px-4 py-2 text-left">Estado</th>
           <th class="px-4 py-2 text-left">Fecha</th>
         </tr>
@@ -148,7 +148,7 @@
         {% for nc in ultimas_nc %}
         <tr>
           <td class="px-4 py-2 font-mono font-semibold">{{ nc.folio }}</td>
-          <td class="px-4 py-2">{{ nc.area }}</td>
+          <td class="px-4 py-2">{{ nc.sector.nombre|default:"—" }}</td>
           <td class="px-4 py-2">{{ nc.get_estado_display }}</td>
           <td class="px-4 py-2">{{ nc.fecha|date:"d/m/Y" }}</td>
         </tr>

@@ -2,5 +2,105 @@
 {% block title %}Reportes — SGC{% endblock %}
 {% block page_title %}Reportes{% endblock %}
 {% block content %}
-<div class="card py-16 text-center"><p class="text-gray-400 text-sm">Módulo en construcción.</p></div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
+	<div class="card"><p class="text-xs text-gray-400 uppercase">NC abiertas</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_nc_abiertas }}</p></div>
+	<div class="card"><p class="text-xs text-gray-400 uppercase">QR abiertas</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_qr_abiertas }}</p></div>
+	<div class="card"><p class="text-xs text-gray-400 uppercase">OM activas</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_om_activas }}</p></div>
+	<div class="card"><p class="text-xs text-gray-400 uppercase">Proyectos activos</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_proyectos_activos }}</p></div>
+	<div class="card"><p class="text-xs text-gray-400 uppercase">Verificaciones pendientes</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_verificaciones_pendientes }}</p></div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5">
+	<div class="card">
+		<h2 class="text-sm font-semibold text-gray-700 mb-3">NC por sector</h2>
+		<div class="space-y-2">
+			{% for item in nc_por_sector %}
+			<div class="flex items-center justify-between text-sm border-b border-gray-100 pb-2">
+				<span>{{ item.sector__nombre|default:"Sin sector" }}</span>
+				<span class="font-semibold text-gray-700">{{ item.total }}</span>
+			</div>
+			{% empty %}
+			<p class="text-sm text-gray-400">Sin datos disponibles.</p>
+			{% endfor %}
+		</div>
+	</div>
+
+	<div class="card">
+		<h2 class="text-sm font-semibold text-gray-700 mb-3">Verificaciones no eficaces recientes</h2>
+		<div class="space-y-2">
+			{% for ver in proyectos_no_eficaces %}
+			<a href="{% url 'verificacion:detalle' ver.pk %}" class="flex items-center justify-between text-sm border-b border-gray-100 pb-2 text-teal-700 hover:underline">
+				<span>{{ ver.proyecto.folio }}</span>
+				<span>{{ ver.actualizado_en|date:"d/m/Y" }}</span>
+			</a>
+			{% empty %}
+			<p class="text-sm text-gray-400">No hay verificaciones no eficaces.</p>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5">
+	<div class="card">
+		<h2 class="text-sm font-semibold text-gray-700 mb-3">Últimas NC</h2>
+		<div class="space-y-2 text-sm">
+			{% for nc in ultimas_nc %}
+			<a href="{% url 'nc:detalle' nc.pk %}" class="flex items-center justify-between border-b border-gray-100 pb-2 text-teal-700 hover:underline">
+				<span class="font-mono">{{ nc.folio }}</span>
+				<span class="text-gray-400">{{ nc.sector.nombre|default:"—" }}</span>
+			</a>
+			{% empty %}<p class="text-sm text-gray-400">Sin registros.</p>{% endfor %}
+		</div>
+	</div>
+
+	<div class="card">
+		<h2 class="text-sm font-semibold text-gray-700 mb-3">Últimas QyR</h2>
+		<div class="space-y-2 text-sm">
+			{% for qr in ultimas_qr %}
+			<a href="{% url 'qr:detalle' qr.pk %}" class="flex items-center justify-between border-b border-gray-100 pb-2 text-teal-700 hover:underline">
+				<span class="font-mono">{{ qr.folio }}</span>
+				<span class="text-gray-400">{{ qr.sector.nombre|default:"—" }}</span>
+			</a>
+			{% empty %}<p class="text-sm text-gray-400">Sin registros.</p>{% endfor %}
+		</div>
+	</div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+	<div class="card">
+		<h2 class="text-sm font-semibold text-gray-700 mb-3">Últimas OM</h2>
+		<div class="space-y-2 text-sm">
+			{% for om in ultimas_om %}
+			<a href="{% url 'om:detalle' om.pk %}" class="flex items-center justify-between border-b border-gray-100 pb-2 text-teal-700 hover:underline">
+				<span class="font-mono">{{ om.folio }}</span>
+				<span class="text-gray-400">{{ om.sector.nombre|default:"—" }}</span>
+			</a>
+			{% empty %}<p class="text-sm text-gray-400">Sin registros.</p>{% endfor %}
+		</div>
+	</div>
+
+	<div class="card">
+		<h2 class="text-sm font-semibold text-gray-700 mb-3">Proyectos recientes</h2>
+		<div class="space-y-2 text-sm">
+			{% for proyecto in proyectos_recientes %}
+			<a href="{% url 'proyectos:detalle' proyecto.pk %}" class="flex items-center justify-between border-b border-gray-100 pb-2 text-teal-700 hover:underline">
+				<span class="font-mono">{{ proyecto.folio }}</span>
+				<span class="text-gray-400">{{ proyecto.sector.nombre|default:"—" }}</span>
+			</a>
+			{% empty %}<p class="text-sm text-gray-400">Sin registros.</p>{% endfor %}
+		</div>
+	</div>
+
+	<div class="card">
+		<h2 class="text-sm font-semibold text-gray-700 mb-3">OM no eficaces recientes</h2>
+		<div class="space-y-2 text-sm">
+			{% for om in oms_no_eficaces %}
+			<a href="{% url 'om:detalle' om.pk %}" class="flex items-center justify-between border-b border-gray-100 pb-2 text-teal-700 hover:underline">
+				<span class="font-mono">{{ om.folio }}</span>
+				<span class="text-gray-400">{{ om.actualizado_en|date:"d/m/Y" }}</span>
+			</a>
+			{% empty %}<p class="text-sm text-gray-400">No hay OMs no eficaces.</p>{% endfor %}
+		</div>
+	</div>
+</div>
 {% endblock %}

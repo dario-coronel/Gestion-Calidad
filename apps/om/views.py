@@ -2,9 +2,11 @@
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
-from .models import OportunidadMejora, EstadoOM
-from .forms import OportunidadMejoraForm, AdjuntoOMForm
+from .models import OportunidadMejora, EstadoOM, EficaciaOM
+from .forms import OportunidadMejoraForm, AdjuntoOMForm, EficaciaOMForm
 
 
 COLORES_ESTADO = {
@@ -89,7 +91,45 @@ def detalle(request, pk):
     if request.method == 'POST' and puede_gestionar:
         accion = request.POST.get('accion')
 
-        if accion == 'cambiar_estado':
+        if accion == 'marcar_eficacia':
+            eficacia_form = EficaciaOMForm(request.POST, instance=om)
+            if eficacia_form.is_valid():
+                om_actualizada = eficacia_form.save(commit=False)
+                if om_actualizada.eficacia == EficaciaOM.NO_EFICAZ:
+                    om_actualizada.estado = EstadoOM.CERRADA
+                    if not om_actualizada.fecha_implementacion:
+                        om_actualizada.fecha_implementacion = timezone.now().date()
+                    om_actualizada.actualizado_por = request.user
+                    om_actualizada.save()
+                    # Crear nueva OM vinculada
+                    nueva_om = OportunidadMejora(
+                        fecha=timezone.now().date(),
+                        sector=om.sector,
+                        responsable=om.responsable,
+                        clasificacion=om.clasificacion,
+                        descripcion=om.descripcion,
+                        problema_a_mejorar=om.problema_a_mejorar,
+                        beneficio_potencial=om.beneficio_potencial,
+                        om_origen=om,
+                        creado_por=request.user,
+                        actualizado_por=request.user,
+                    )
+                    nueva_om.save()
+                    messages.warning(
+                        request,
+                        f'OM marcada como No Eficaz y cerrada. Se generó automáticamente la nueva OM {nueva_om.folio}.'
+                    )
+                    return redirect('om:detalle', pk=nueva_om.pk)
+                else:
+                    om_actualizada.estado = EstadoOM.CERRADA
+                    if not om_actualizada.fecha_implementacion:
+                        om_actualizada.fecha_implementacion = timezone.now().date()
+                    om_actualizada.actualizado_por = request.user
+                    om_actualizada.save()
+                    messages.success(request, 'OM marcada como Eficaz y cerrada.')
+                    return redirect('om:detalle', pk=pk)
+
+        elif accion == 'cambiar_estado':
             nuevo_estado = request.POST.get('nuevo_estado')
             if nuevo_estado in dict(EstadoOM.choices):
                 om.estado = nuevo_estado
@@ -124,6 +164,7 @@ def detalle(request, pk):
         'estados': EstadoOM.choices,
         'puede_gestionar': puede_gestionar,
         'puede_editar': puede_editar,
+        'eficacia_form': EficaciaOMForm(instance=om),
     })
 
 
@@ -158,4 +199,22 @@ def editar(request, pk):
         'accion': 'Guardar cambios',
         'om': om,
     })
+
+
+# ── PDF ───────────────────────────────────────────────────────────────────────
+
+@login_required
+def pdf(request, pk):
+    """Exporta el registro completo de la OM en PDF."""
+    om = get_object_or_404(OportunidadMejora, pk=pk, eliminado=False)
+    try:
+        from weasyprint import HTML as WP_HTML
+        html_string = render_to_string('om/pdf.html', {'om': om}, request=request)
+        pdf_bytes = WP_HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{om.folio}.pdf"'
+        return response
+    except Exception as exc:
+        messages.error(request, f'Error al generar PDF: {exc}')
+        return redirect('om:detalle', pk=pk)
 

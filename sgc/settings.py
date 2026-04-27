@@ -86,7 +86,7 @@ DATABASES = {
 AUTH_USER_MODEL = 'accounts.Usuario'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -117,6 +117,17 @@ STORAGES = {
 # Archivos multimedia (adjuntos)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Email
+# En desarrollo imprime los emails en la consola.
+# Para producción, setear las variables en .env.
+EMAIL_BACKEND   = env('EMAIL_BACKEND',   default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST      = env('EMAIL_HOST',      default='smtp.gmail.com')
+EMAIL_PORT      = env.int('EMAIL_PORT',  default=587)
+EMAIL_USE_TLS   = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL  = env('DEFAULT_FROM_EMAIL',  default='SGC EDP Agro <no-reply@edpagro.com>')
 
 # Límites de adjuntos
 ADJUNTO_MAX_SIZE_MB = 10

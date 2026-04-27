@@ -14,29 +14,45 @@
       </div>
       <div class="grid grid-cols-2 gap-5">
         <div>
+          <label class="form-label">Sector</label>
+          {{ form.sector }}
+        </div>
+        <div>
           <label class="form-label">Prioridad *</label>
           {{ form.prioridad }}
         </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5">
         <div>
           <label class="form-label">Responsable</label>
           {{ form.responsable }}
         </div>
-      </div>
-      <div class="grid grid-cols-2 gap-5">
         <div>
           <label class="form-label">Fecha de inicio *</label>
           {{ form.fecha_inicio }}
         </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5">
         <div>
           <label class="form-label">Duración (días) *</label>
           {{ form.dias_ejecucion }}
         </div>
-      </div>
-      <div class="grid grid-cols-2 gap-5">
         <div>
           <label class="form-label">Origen</label>
           {{ form.origen }}
         </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5" id="bloque_nc_om">
+        <div>
+          <label class="form-label">NC de origen</label>
+          {{ form.nc }}
+        </div>
+        <div>
+          <label class="form-label">OM de origen</label>
+          {{ form.om }}
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5">
         <div>
           <label class="form-label">Proveedor</label>
           {{ form.proveedor }}
@@ -50,4 +66,25 @@
     </div>
   </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const origen = document.getElementById('id_origen_proyecto');
+    const ncWrap = document.getElementById('id_nc')?.closest('div');
+    const omWrap = document.getElementById('id_om')?.closest('div');
+
+    function toggleOrigenProyecto() {
+      if (!origen || !ncWrap || !omWrap) return;
+      ncWrap.style.display = origen.value === 'nc' ? 'block' : 'none';
+      omWrap.style.display = origen.value === 'om' ? 'block' : 'none';
+    }
+
+    if (origen) {
+      origen.addEventListener('change', toggleOrigenProyecto);
+      toggleOrigenProyecto();
+    }
+  })();
+</script>
 {% endblock %}

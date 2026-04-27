@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import Usuario, Rol
+from apps.core.models import Sector
 from apps.nc.models import NoConformidad, EstadoNC, ClasificacionNC
 
 
@@ -19,12 +20,13 @@ class NCRoleWorkflowTests(TestCase):
             rol=Rol.CALIDAD,
             is_active=True,
         )
+        self.sector, _ = Sector.objects.get_or_create(nombre='Laboratorio')
 
     def test_operario_crea_nc_en_revision(self):
         self.client.login(username='nc_operario', password='Operario1234!')
         payload = {
             'fecha': '2026-04-24',
-            'area': 'Laboratorio',
+            'sector': self.sector.pk,
             'responsable': self.operario.pk,
             'id_muestra_lote': 'L-001',
             'parametro_afectado': 'Humedad',
@@ -39,7 +41,7 @@ class NCRoleWorkflowTests(TestCase):
 
     def test_calidad_puede_reenviar_nc_a_borrador(self):
         nc = NoConformidad.objects.create(
-            area='Laboratorio',
+            sector=self.sector,
             responsable=self.operario,
             descripcion='NC a revisar',
             prioridad='media',

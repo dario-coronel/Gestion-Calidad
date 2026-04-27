@@ -24,7 +24,7 @@
         </div>
         <div>
           <dt class="form-label mb-0.5">Sector</dt>
-          <dd class="text-gray-800">{{ om.sector|default:"—" }}</dd>
+          <dd class="text-gray-800">{{ om.sector.nombre|default:"—" }}</dd>
         </div>
         <div>
           <dt class="form-label mb-0.5">Fecha</dt>
@@ -34,6 +34,36 @@
           <dt class="form-label mb-0.5">Responsable</dt>
           <dd class="text-gray-800">{{ om.responsable.get_full_name|default:om.responsable.username|default:"Sin asignar" }}</dd>
         </div>
+        <div>
+          <dt class="form-label mb-0.5">Beneficio potencial</dt>
+          <dd class="text-gray-800">{{ om.get_beneficio_potencial_display|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Rango de evaluación</dt>
+          <dd class="text-gray-800">{{ om.get_rango_evaluacion_display|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Fecha de evaluación</dt>
+          <dd class="text-gray-800">{{ om.fecha_evaluacion|date:"d/m/Y"|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Fecha de implementación</dt>
+          <dd class="text-gray-800">{{ om.fecha_implementacion|date:"d/m/Y"|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">Eficacia</dt>
+          <dd class="text-gray-800">
+            {% if om.eficacia == 'eficaz' %}<span class="text-green-700 font-medium">Eficaz</span>
+            {% elif om.eficacia == 'no_eficaz' %}<span class="text-red-600 font-medium">No Eficaz</span>
+            {% else %}<span class="text-gray-400">Pendiente</span>{% endif %}
+          </dd>
+        </div>
+        {% if om.om_origen %}
+        <div>
+          <dt class="form-label mb-0.5">Originada por OM</dt>
+          <dd><a href="{% url 'om:detalle' om.om_origen.pk %}" class="text-teal-700 hover:underline font-mono">{{ om.om_origen.folio }}</a></dd>
+        </div>
+        {% endif %}
       </dl>
 
       <div>
@@ -41,13 +71,36 @@
         <dd class="text-sm text-gray-800 whitespace-pre-line">{{ om.descripcion }}</dd>
       </div>
 
-      {% if om.beneficio_potencial %}
+      {% if om.problema_a_mejorar %}
       <div>
-        <dt class="form-label mb-0.5">Beneficio potencial</dt>
-        <dd class="text-sm text-gray-800 whitespace-pre-line">{{ om.beneficio_potencial }}</dd>
+        <dt class="form-label mb-0.5">Problema a mejorar</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line bg-yellow-50 rounded p-3">{{ om.problema_a_mejorar }}</dd>
+      </div>
+      {% endif %}
+
+      {% if om.seguimiento %}
+      <div>
+        <dt class="form-label mb-0.5">Seguimiento</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line bg-blue-50 rounded p-3">{{ om.seguimiento }}</dd>
+      </div>
+      {% endif %}
+
+      {% if om.evidencia %}
+      <div>
+        <dt class="form-label mb-0.5">Evidencia</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line bg-green-50 rounded p-3">{{ om.evidencia }}</dd>
       </div>
       {% endif %}
     </div>
+
+    {% if om.om_generadas.exists %}
+    <div class="card border-l-4 border-orange-400 space-y-2">
+      <h3 class="text-sm font-semibold text-orange-700">OMs generadas por No Eficaz</h3>
+      {% for nueva in om.om_generadas.all %}
+      <a href="{% url 'om:detalle' nueva.pk %}" class="block text-sm text-teal-700 hover:underline font-mono">{{ nueva.folio }} — {{ nueva.fecha|date:"d/m/Y" }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- Proyecto vinculado -->
     {% if om.proyectos.exists %}
@@ -66,6 +119,12 @@
 
     <div class="card space-y-3">
       <h3 class="text-sm font-semibold">Acciones</h3>
+
+      <a href="{% url 'om:pdf' om.pk %}" target="_blank"
+         class="btn-secondary w-full text-sm text-center flex items-center justify-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Exportar PDF
+      </a>
 
       {% if puede_editar %}
       <a href="{% url 'om:editar' om.pk %}" class="btn-secondary w-full text-sm text-center block">Editar</a>
@@ -98,9 +157,37 @@
     <div class="card text-xs text-gray-400 space-y-1">
       <p>Creado: {{ om.creado_en|date:"d/m/Y H:i" }}</p>
       {% if om.creado_por %}
-      <p>Por: {{ om.creado_por.get_full_name|default:om.creado_por.username }}</p>
+      <p>Por: {% if om.creado_por %}{{ om.creado_por.get_full_name|default:om.creado_por.username }}{% else %}—{% endif %}</p>
       {% endif %}
     </div>
+
+    {% if puede_gestionar and om.estado != 'cerrada' and om.estado != 'rechazada' %}
+    <div class="card space-y-3 border-l-4 border-teal-500">
+      <h3 class="text-sm font-semibold text-teal-700">Evaluar eficacia</h3>
+      <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="marcar_eficacia">
+        <div>
+          <label class="form-label text-xs">Eficacia</label>
+          {{ eficacia_form.eficacia }}
+        </div>
+        <div>
+          <label class="form-label text-xs">Evidencia</label>
+          {{ eficacia_form.evidencia }}
+        </div>
+        <div>
+          <label class="form-label text-xs">Seguimiento</label>
+          {{ eficacia_form.seguimiento }}
+        </div>
+        <div>
+          <label class="form-label text-xs">Fecha de implementación</label>
+          {{ eficacia_form.fecha_implementacion }}
+        </div>
+        <p class="text-xs text-orange-500">Si marcás "No Eficaz", esta OM se cerrará y se abrirá una nueva automáticamente.</p>
+        <button type="submit" class="btn-primary w-full text-sm">Registrar evaluación</button>
+      </form>
+    </div>
+    {% endif %}
 
   </div>
 </div>

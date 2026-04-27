@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>{{ nc.folio }} — No Conformidad Completa</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; padding: 20px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start;
+           border-bottom: 3px solid #0f766e; padding-bottom: 12px; margin-bottom: 18px; }
+  header h1 { font-size: 20px; color: #0f766e; }
+  header .meta { text-align: right; font-size: 10px; color: #555; line-height: 1.6; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px;
+           font-weight: bold; background: #e2f0ef; color: #0f766e; }
+  .section { margin-bottom: 16px; page-break-inside: avoid; }
+  .section-title { font-size: 10px; font-weight: bold; text-transform: uppercase;
+                   letter-spacing: 0.06em; color: #0f766e; border-bottom: 1px solid #c8e6e4;
+                   padding-bottom: 4px; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 4px 6px; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+  td.lbl { width: 32%; font-weight: bold; color: #444; background: #f9f9f9; }
+  td.val { color: #111; }
+  .campo-texto { background: #f8f8f8; padding: 8px; border-radius: 4px;
+                 white-space: pre-wrap; border-left: 3px solid #c8e6e4; }
+  .porque-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; }
+  .porque-num { min-width: 28px; height: 28px; background: #0f766e; color: #fff;
+                border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                font-weight: bold; font-size: 11px; }
+  .porque-text { flex: 1; background: #f8f8f8; padding: 5px 8px; border-radius: 4px; }
+  .riesgo-bajo  { color: #16a34a; font-weight: bold; }
+  .riesgo-medio { color: #d97706; font-weight: bold; }
+  .riesgo-alto  { color: #dc2626; font-weight: bold; }
+  .page-break { page-break-before: always; }
+  footer { margin-top: 24px; border-top: 1px solid #ddd; padding-top: 8px;
+           font-size: 9px; color: #888; text-align: center; }
+  .firma-bloque { display: flex; gap: 32px; margin-top: 24px; }
+  .firma { flex: 1; border-top: 1px solid #999; padding-top: 4px; text-align: center; font-size: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>No Conformidad — Registro Completo</h1>
+    <div style="margin-top:6px">
+      <span class="badge">{{ nc.folio }}</span>
+      <span style="margin-left:8px;font-size:10px;color:#555">Estado: <strong>{{ nc.get_estado_display }}</strong></span>
+      <span style="margin-left:12px;font-size:10px;color:#555">Eficacia: <strong>{{ nc.get_eficacia_display }}</strong></span>
+    </div>
+    {% if nc.nc_origen %}
+    <div style="margin-top:4px;font-size:10px;color:#b45309">
+      Seguimiento de NC anterior: <strong>{{ nc.nc_origen.folio }}</strong>
+    </div>
+    {% endif %}
+  </div>
+  <div class="meta">
+    <div><strong>Fecha:</strong> {{ nc.fecha }}</div>
+    <div><strong>Sector:</strong> {{ nc.sector.nombre|default:"—" }}</div>
+    <div><strong>Responsable:</strong> {{ nc.responsable.get_full_name }}</div>
+    <div><strong>Prioridad:</strong> {{ nc.get_prioridad_display }}</div>
+    <div style="margin-top:4px;font-size:9px;color:#aaa">Impreso: {% now "d/m/Y H:i" %}</div>
+  </div>
+</header>
+
+{# ── SECCIÓN 1: Identificación ── #}
+<div class="section">
+  <div class="section-title">1. Identificación</div>
+  <table>
+    <tr>
+      <td class="lbl">Clasificación</td>
+      <td class="val">{{ nc.get_clasificacion_display }}</td>
+      <td class="lbl">Origen</td>
+      <td class="val">{{ nc.get_origen_display }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">ID Muestra / Lote</td>
+      <td class="val">{{ nc.id_muestra_lote|default:"—" }}</td>
+      <td class="lbl">Parámetro afectado</td>
+      <td class="val">{{ nc.parametro_afectado|default:"—" }}</td>
+    </tr>
+    {% if nc.qr_relacionada %}
+    <tr>
+      <td class="lbl">QyR asociada</td>
+      <td class="val" colspan="3">{{ nc.qr_relacionada.folio }} — {{ nc.qr_relacionada }}</td>
+    </tr>
+    {% endif %}
+    {% if nc.om_relacionada %}
+    <tr>
+      <td class="lbl">OM asociada</td>
+      <td class="val" colspan="3">{{ nc.om_relacionada.folio }} — {{ nc.om_relacionada }}</td>
+    </tr>
+    {% endif %}
+    {% if nc.nc_origen %}
+    <tr>
+      <td class="lbl">NC origen (No Eficaz)</td>
+      <td class="val" colspan="3">{{ nc.nc_origen.folio }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td class="lbl">Creada por</td>
+      <td class="val">{{ nc.creado_por.get_full_name|default:"—" }}</td>
+      <td class="lbl">Última actualización</td>
+      <td class="val">{{ nc.actualizado_en|date:"d/m/Y H:i" }}</td>
+    </tr>
+  </table>
+</div>
+
+{# ── SECCIÓN 2: Descripción ── #}
+<div class="section">
+  <div class="section-title">2. Descripción del Problema</div>
+  <div class="campo-texto">{{ nc.descripcion }}</div>
+</div>
+
+{# ── SECCIÓN 3: Corrección inmediata ── #}
+<div class="section">
+  <div class="section-title">3. Corrección Inmediata</div>
+  <div class="campo-texto">{{ nc.descripcion_correccion|default:"No se registró corrección inmediata." }}</div>
+</div>
+
+{# ── SECCIÓN 4: Contaminación cruzada ── #}
+{% if nc.contaminacion_cruzada %}
+<div class="section">
+  <div class="section-title">4. Contaminación Cruzada</div>
+  <table>
+    <tr>
+      <td class="lbl">Tipo de contaminación</td>
+      <td class="val">{{ nc.get_tipo_contaminacion_display }}</td>
+    </tr>
+    {% if nc.obs_contaminacion %}
+    <tr>
+      <td class="lbl">Observaciones</td>
+      <td class="val">{{ nc.obs_contaminacion }}</td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+{% endif %}
+
+{# ── SECCIÓN 5: Matriz de Riesgo ── #}
+<div class="section">
+  <div class="section-title">5. Matriz de Riesgo</div>
+  <table>
+    <tr>
+      <td class="lbl">Probabilidad (1-5)</td>
+      <td class="val">{{ nc.probabilidad|default:"Sin evaluar" }}</td>
+      <td class="lbl">Impacto (1-5)</td>
+      <td class="val">{{ nc.impacto|default:"Sin evaluar" }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Riesgo calculado</td>
+      <td class="val" colspan="3">
+        {% if nc.riesgo_calculado %}
+          {% if nc.riesgo_calculado >= 15 %}<span class="riesgo-alto">{{ nc.riesgo_calculado }} — ALTO</span>
+          {% elif nc.riesgo_calculado >= 8 %}<span class="riesgo-medio">{{ nc.riesgo_calculado }} — MEDIO</span>
+          {% else %}<span class="riesgo-bajo">{{ nc.riesgo_calculado }} — BAJO</span>
+          {% endif %}
+        {% else %}Sin evaluación{% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
+
+{# ── SECCIÓN 6: Análisis 5 Porqués ── #}
+{% if cinco_p %}
+<div class="section page-break">
+  <div class="section-title">6. Análisis de Causa Raíz — 5 Porqués</div>
+  <div class="porque-row"><div class="porque-num">0</div><div class="porque-text"><strong>Problema:</strong> {{ cinco_p.etapa_1 }}</div></div>
+  {% if cinco_p.etapa_2 %}<div class="porque-row"><div class="porque-num">1</div><div class="porque-text">{{ cinco_p.etapa_2 }}</div></div>{% endif %}
+  {% if cinco_p.etapa_3 %}<div class="porque-row"><div class="porque-num">2</div><div class="porque-text">{{ cinco_p.etapa_3 }}</div></div>{% endif %}
+  {% if cinco_p.etapa_4 %}<div class="porque-row"><div class="porque-num">3</div><div class="porque-text">{{ cinco_p.etapa_4 }}</div></div>{% endif %}
+  {% if cinco_p.etapa_5 %}<div class="porque-row"><div class="porque-num">4</div><div class="porque-text">{{ cinco_p.etapa_5 }}</div></div>{% endif %}
+
+  {% if cinco_p.causa_raiz %}
+  <div style="margin-top:8px">
+    <strong>Causa raíz identificada:</strong>
+    <div class="campo-texto" style="margin-top:4px">{{ cinco_p.causa_raiz }}</div>
+  </div>
+  {% endif %}
+
+  {% if cinco_p.accion_correctiva %}
+  <div style="margin-top:8px">
+    <strong>Acción correctiva propuesta:</strong>
+    <div class="campo-texto" style="margin-top:4px">{{ cinco_p.accion_correctiva }}</div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── SECCIÓN 7: Evidencia y Eficacia ── #}
+<div class="section">
+  <div class="section-title">7. Evidencia y Eficacia</div>
+  <table>
+    <tr>
+      <td class="lbl">Eficacia evaluada</td>
+      <td class="val"><strong>{{ nc.get_eficacia_display }}</strong></td>
+    </tr>
+  </table>
+  {% if nc.evidencia %}
+  <div style="margin-top:6px">
+    <strong>Descripción de evidencia:</strong>
+    <div class="campo-texto" style="margin-top:4px">{{ nc.evidencia }}</div>
+  </div>
+  {% endif %}
+  {% if nc.nc_generadas.exists %}
+  <div style="margin-top:6px;font-size:10px;color:#b45309">
+    <strong>NC generadas por No Eficacia:</strong>
+    {% for nc_gen in nc.nc_generadas.all %}{{ nc_gen.folio }}{% if not forloop.last %}, {% endif %}{% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{# ── Notificación cliente ── #}
+{% if nc.notificar_cliente %}
+<div class="section">
+  <div class="section-title">8. Notificación al Cliente</div>
+  <table>
+    <tr>
+      <td class="lbl">E-mail notificado</td>
+      <td class="val">{{ nc.email_cliente|default:"Sin email registrado" }}</td>
+    </tr>
+  </table>
+</div>
+{% endif %}
+
+{# ── Firmas ── #}
+<div class="firma-bloque">
+  <div class="firma">
+    <div style="height:32px"></div>
+    Responsable<br>{{ nc.responsable.get_full_name }}
+  </div>
+  <div class="firma">
+    <div style="height:32px"></div>
+    Calidad / Revisión
+  </div>
+  <div class="firma">
+    <div style="height:32px"></div>
+    Gerencia / Aprobación
+  </div>
+</div>
+
+<footer>
+  SGC EDP Agroindustrial — {{ nc.folio }} — Documento generado el {% now "d/m/Y \a \l\a\s H:i" %}
+</footer>
+</body>
+</html>

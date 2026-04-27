@@ -22,7 +22,7 @@ COLORES_PRIORIDAD_GANTT = {
 
 
 def _build_gantt(proyectos_list):
-    """Devuelve (gantt_items, gantt_header) listos para el template."""
+    """Devuelve (gantt_items, gantt_header, total_width_px, today_px, show_today) listos para el template."""
     all_dates = []
     for p in proyectos_list:
         if p.fecha_inicio:
@@ -31,29 +31,45 @@ def _build_gantt(proyectos_list):
             all_dates.append(p.fecha_fin)
 
     if not all_dates:
-        return [], []
+        return [], [], 0, 0, False
 
     min_d = min(all_dates)
     max_d = max(all_dates)
-    total = max((max_d - min_d).days, 1)
+    total_days = max((max_d - min_d).days, 1)
+
+    # Píxeles por día según rango total → barras proporcionadas a fechas reales
+    if total_days <= 30:
+        px_per_day = 24
+    elif total_days <= 90:
+        px_per_day = 14
+    elif total_days <= 180:
+        px_per_day = 8
+    elif total_days <= 365:
+        px_per_day = 4
+    else:
+        px_per_day = 2
+
+    total_width_px = total_days * px_per_day
 
     items = []
     for p in proyectos_list:
         if not (p.fecha_inicio and p.fecha_fin):
             continue
-        offset = (p.fecha_inicio - min_d).days / total * 100
-        width  = p.dias_ejecucion / total * 100
+        offset_px  = (p.fecha_inicio - min_d).days * px_per_day
+        width_px   = max(p.dias_ejecucion * px_per_day, 6)
+        avance_px  = round(width_px * p.porcentaje_avance / 100)
         items.append({
-            'pk':       p.pk,
-            'nombre':   f'{p.folio} · {p.nombre[:45]}',
-            'offset':   round(offset, 2),
-            'width':    max(round(width, 2), 0.5),
-            'color':    COLORES_PRIORIDAD_GANTT.get(p.prioridad, '#6b7280'),
+            'pk':        p.pk,
+            'nombre':    f'{p.folio} · {p.nombre[:45]}',
+            'offset_px': offset_px,
+            'width_px':  width_px,
+            'avance_px': avance_px,
+            'color':     COLORES_PRIORIDAD_GANTT.get(p.prioridad, '#6b7280'),
             'prioridad': p.get_prioridad_display(),
-            'estado':   p.get_estado_display(),
-            'avance':   p.porcentaje_avance,
-            'inicio':   p.fecha_inicio.strftime('%d/%m/%Y'),
-            'fin':      p.fecha_fin.strftime('%d/%m/%Y'),
+            'estado':    p.get_estado_display(),
+            'avance':    p.porcentaje_avance,
+            'inicio':    p.fecha_inicio.strftime('%d/%m/%Y'),
+            'fin':       p.fecha_fin.strftime('%d/%m/%Y'),
         })
 
     # Marcadores de mes en el eje X
@@ -61,17 +77,22 @@ def _build_gantt(proyectos_list):
     cur = date_cls(min_d.year, min_d.month, 1)
     while cur <= max_d:
         header.append({
-            'label':  cur.strftime('%b %Y'),
-            'offset': round((cur - min_d).days / total * 100, 2),
+            'label':     cur.strftime('%b %Y'),
+            'offset_px': max((cur - min_d).days * px_per_day, 0),
         })
         cur = date_cls(cur.year + (cur.month // 12), (cur.month % 12) + 1, 1)
 
-    return items, header
+    # Línea de "hoy"
+    today = date_cls.today()
+    show_today = min_d <= today <= max_d
+    today_px = (today - min_d).days * px_per_day if show_today else 0
+
+    return items, header, total_width_px, today_px, show_today
 
 
 @login_required
 def lista(request):
-    qs = Proyecto.objects.filter(eliminado=False).select_related('responsable')
+    qs = Proyecto.objects.filter(eliminado=False).select_related('responsable', 'sector', 'nc', 'om')
 
     estado = request.GET.get('estado', '')
     q = request.GET.get('q', '')
@@ -82,15 +103,18 @@ def lista(request):
         qs = qs.filter(folio__icontains=q) | qs.filter(nombre__icontains=q)
 
     proyectos_list = list(qs)
-    gantt_items, gantt_header = _build_gantt(proyectos_list)
+    gantt_items, gantt_header, gantt_total_width, gantt_today_px, gantt_show_today = _build_gantt(proyectos_list)
 
     return render(request, 'proyectos/lista.html', {
-        'proyectos':    proyectos_list,
-        'colores_estado': COLORES_ESTADO,
-        'estados':      EstadoProyecto.choices,
-        'filtros':      {'estado': estado, 'q': q},
-        'gantt_items':  gantt_items,
-        'gantt_header': gantt_header,
+        'proyectos':         proyectos_list,
+        'colores_estado':    COLORES_ESTADO,
+        'estados':           EstadoProyecto.choices,
+        'filtros':           {'estado': estado, 'q': q},
+        'gantt_items':       gantt_items,
+        'gantt_header':      gantt_header,
+        'gantt_total_width': gantt_total_width,
+        'gantt_today_px':    gantt_today_px,
+        'gantt_show_today':  gantt_show_today,
     })
 
 
@@ -122,7 +146,7 @@ def crear(request):
 
 @login_required
 def detalle(request, pk):
-    proyecto = get_object_or_404(Proyecto, pk=pk, eliminado=False)
+    proyecto = get_object_or_404(Proyecto.objects.select_related('sector', 'nc', 'om', 'verificacion_eficacia'), pk=pk, eliminado=False)
     puede_gestionar = request.user.es_calidad or request.user.is_superuser
     subtarea_form = SubtareaForm()
 
@@ -166,6 +190,7 @@ def detalle(request, pk):
 
     return render(request, 'proyectos/detalle.html', {
         'proyecto': proyecto,
+        'subtareas_completadas': proyecto.subtareas.filter(completada=True).count(),
         'subtarea_form': subtarea_form,
         'color_estado': COLORES_ESTADO.get(proyecto.estado, ''),
         'estados': EstadoProyecto.choices,

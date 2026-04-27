@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>{{ qr.folio }} — Queja y Reclamo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; padding: 20px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start;
+           border-bottom: 3px solid #0f766e; padding-bottom: 12px; margin-bottom: 18px; }
+  header h1 { font-size: 20px; color: #0f766e; }
+  header .meta { text-align: right; font-size: 10px; color: #555; line-height: 1.6; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px;
+           font-weight: bold; background: #e2f0ef; color: #0f766e; }
+  .section { margin-bottom: 16px; page-break-inside: avoid; }
+  .section-title { font-size: 10px; font-weight: bold; text-transform: uppercase;
+                   letter-spacing: 0.06em; color: #0f766e; border-bottom: 1px solid #c8e6e4;
+                   padding-bottom: 4px; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 4px 6px; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+  td.lbl { width: 32%; font-weight: bold; color: #444; background: #f9f9f9; }
+  td.val { color: #111; }
+  .campo-texto { background: #f8f8f8; padding: 8px; border-radius: 4px;
+                 white-space: pre-wrap; border-left: 3px solid #c8e6e4; }
+  footer { margin-top: 24px; border-top: 1px solid #ddd; padding-top: 8px;
+           font-size: 9px; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Queja y Reclamo</h1>
+    <div style="margin-top:6px">
+      <span class="badge">{{ qr.folio }}</span>
+      <span style="margin-left:8px;font-size:10px;color:#555">Estado: <strong>{{ qr.get_estado_display }}</strong></span>
+    </div>
+  </div>
+  <div class="meta">
+    <div><strong>Fecha:</strong> {{ qr.fecha|date:"d/m/Y" }}</div>
+    <div><strong>Sector:</strong> {{ qr.sector.nombre|default:"—" }}</div>
+    <div><strong>Responsable:</strong> {{ qr.responsable.get_full_name|default:qr.responsable.username }}</div>
+    <div><strong>Prioridad:</strong> {{ qr.get_prioridad_display }}</div>
+    <div style="margin-top:4px;font-size:9px;color:#aaa">Impreso: {% now "d/m/Y H:i" %}</div>
+  </div>
+</header>
+
+{# ── SECCIÓN 1: Identificación ── #}
+<div class="section">
+  <div class="section-title">1. Identificación</div>
+  <table>
+    <tr>
+      <td class="lbl">Tipo de reclamo</td>
+      <td class="val">{{ qr.get_tipo_reclamo_display }}</td>
+      <td class="lbl">Clasificación</td>
+      <td class="val">{{ qr.clasificacion|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Cliente / Nro Pedido</td>
+      <td class="val">{{ qr.id_cliente_pedido|default:"—" }}</td>
+      <td class="lbl">Quién recibe</td>
+      <td class="val">{{ qr.quien_recibe|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Tiempo de resolución</td>
+      <td class="val">{% if qr.dias_resolucion %}{{ qr.dias_resolucion }} días{% else %}—{% endif %}</td>
+      <td class="lbl">Fecha de cierre</td>
+      <td class="val">{{ qr.fecha_cierre|date:"d/m/Y"|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Envío de mail al cliente</td>
+      <td class="val" colspan="3">{% if qr.envio_mail %}Sí{% else %}No{% endif %}</td>
+    </tr>
+    {% with nc=qr.nc_relacionadas.first %}
+    {% if nc %}
+    <tr>
+      <td class="lbl">NC relacionada</td>
+      <td class="val" colspan="3">{{ nc.folio }}</td>
+    </tr>
+    {% endif %}
+    {% endwith %}
+    <tr>
+      <td class="lbl">Creado por</td>
+      <td class="val">{{ qr.creado_por.get_full_name|default:"—" }}</td>
+      <td class="lbl">Última actualización</td>
+      <td class="val">{{ qr.actualizado_en|date:"d/m/Y H:i" }}</td>
+    </tr>
+  </table>
+</div>
+
+{# ── SECCIÓN 2: Descripción ── #}
+<div class="section">
+  <div class="section-title">2. Descripción del Reclamo</div>
+  <div class="campo-texto">{{ qr.descripcion }}</div>
+</div>
+
+{# ── SECCIÓN 3: Gestión y Seguimiento ── #}
+{% if qr.detalle_visita_cliente or qr.acciones_a_tomar or qr.resultado %}
+<div class="section">
+  <div class="section-title">3. Gestión y Seguimiento</div>
+  {% if qr.detalle_visita_cliente %}
+  <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Detalle visita al cliente</p>
+  <div class="campo-texto" style="margin-bottom:10px">{{ qr.detalle_visita_cliente }}</div>
+  {% endif %}
+  {% if qr.acciones_a_tomar %}
+  <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Acciones a tomar</p>
+  <div class="campo-texto" style="margin-bottom:10px">{{ qr.acciones_a_tomar }}</div>
+  {% endif %}
+  {% if qr.resultado %}
+  <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Resultado</p>
+  <div class="campo-texto">{{ qr.resultado }}</div>
+  {% endif %}
+</div>
+{% endif %}
+
+<footer>SGC — EDP Agroindustrial &nbsp;|&nbsp; {{ qr.folio }} &nbsp;|&nbsp; Generado el {% now "d/m/Y H:i" %}</footer>
+
+</body>
+</html>

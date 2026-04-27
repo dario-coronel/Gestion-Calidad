@@ -35,6 +35,7 @@ def crear_proyecto_desde_nc(sender, instance, created, **kwargs):
 
     Proyecto.objects.create(
         nombre=f'Corrección de {instance.folio}',
+        sector=instance.sector,
         prioridad=mapa_prioridad.get(instance.prioridad, PrioridadProyecto.MEDIA),
         fecha_inicio=timezone.now().date(),
         dias_ejecucion=30,

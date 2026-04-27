@@ -17,20 +17,55 @@
 
       <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
         <div><dt class="form-label mb-0.5">Tipo</dt><dd class="text-gray-800">{{ qr.get_tipo_reclamo_display }}</dd></div>
-        <div><dt class="form-label mb-0.5">Area origen</dt><dd class="text-gray-800">{{ qr.area_origen|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Sector de origen</dt><dd class="text-gray-800">{{ qr.sector.nombre|default:"—" }}</dd></div>
         <div><dt class="form-label mb-0.5">Cliente / Nro Pedido</dt><dd class="text-gray-800">{{ qr.id_cliente_pedido|default:"—" }}</dd></div>
         <div><dt class="form-label mb-0.5">Fecha</dt><dd class="text-gray-800">{{ qr.fecha|date:"d/m/Y" }}</dd></div>
         <div><dt class="form-label mb-0.5">Prioridad</dt><dd class="text-gray-800">{{ qr.get_prioridad_display }}</dd></div>
-        <div><dt class="form-label mb-0.5">Clasificacion</dt><dd class="text-gray-800">{{ qr.clasificacion|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Clasificación</dt><dd class="text-gray-800">{{ qr.clasificacion|default:"—" }}</dd></div>
         <div><dt class="form-label mb-0.5">Responsable</dt><dd class="text-gray-800">{{ qr.responsable.get_full_name|default:qr.responsable.username|default:"Sin asignar" }}</dd></div>
-        <div><dt class="form-label mb-0.5">Dias resolucion</dt><dd class="text-gray-800">{{ qr.dias_resolucion|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Quién recibe</dt><dd class="text-gray-800">{{ qr.quien_recibe|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Tiempo de respuesta</dt><dd class="text-gray-800">{% if qr.dias_resolucion %}{{ qr.dias_resolucion }} días{% else %}—{% endif %}</dd></div>
+        <div><dt class="form-label mb-0.5">Fecha de cierre</dt><dd class="text-gray-800">{{ qr.fecha_cierre|date:"d/m/Y"|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Envío de mail</dt><dd class="text-gray-800">{% if qr.envio_mail %}<span class="text-teal-700 font-medium">Enviado</span>{% else %}No{% endif %}</dd></div>
+        <div>
+          <dt class="form-label mb-0.5">NC relacionada</dt>
+          <dd class="text-gray-800">
+            {% with nc=qr.nc_relacionadas.first %}
+              {% if nc %}<a href="{% url 'nc:detalle' nc.pk %}" class="text-teal-700 hover:underline font-medium">{{ nc.folio }}</a>{% else %}—{% endif %}
+            {% endwith %}
+          </dd>
+        </div>
       </dl>
 
       <div>
-        <dt class="form-label mb-0.5">Descripcion</dt>
+        <dt class="form-label mb-0.5">Descripción</dt>
         <dd class="text-sm text-gray-800 whitespace-pre-line">{{ qr.descripcion }}</dd>
       </div>
     </div>
+
+    {% if qr.detalle_visita_cliente or qr.acciones_a_tomar or qr.resultado %}
+    <div class="card space-y-4">
+      <h3 class="text-sm font-semibold text-gray-700 border-b pb-2">Gestión y Seguimiento</h3>
+      {% if qr.detalle_visita_cliente %}
+      <div>
+        <dt class="form-label mb-0.5">Detalle visita al cliente</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line bg-blue-50 rounded p-3">{{ qr.detalle_visita_cliente }}</dd>
+      </div>
+      {% endif %}
+      {% if qr.acciones_a_tomar %}
+      <div>
+        <dt class="form-label mb-0.5">Acciones a tomar</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line bg-yellow-50 rounded p-3">{{ qr.acciones_a_tomar }}</dd>
+      </div>
+      {% endif %}
+      {% if qr.resultado %}
+      <div>
+        <dt class="form-label mb-0.5">Resultado</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line bg-green-50 rounded p-3">{{ qr.resultado }}</dd>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
 
     {% if qr.adjuntos.exists %}
     <div class="card">
@@ -47,6 +82,12 @@
   <div class="w-60 space-y-4 flex-shrink-0">
     <div class="card space-y-3">
       <h3 class="text-sm font-semibold">Acciones</h3>
+
+      <a href="{% url 'qr:pdf' qr.pk %}" target="_blank"
+         class="btn-secondary w-full text-sm text-center flex items-center justify-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Exportar PDF
+      </a>
 
       {% if puede_editar %}
       <a href="{% url 'qr:editar' qr.pk %}" class="btn-secondary w-full text-sm text-center block">Editar</a>
@@ -79,7 +120,7 @@
     <div class="card text-xs text-gray-400 space-y-1">
       <p>Creado: {{ qr.creado_en|date:"d/m/Y H:i" }}</p>
       {% if qr.creado_por %}
-      <p>Por: {{ qr.creado_por.get_full_name|default:qr.creado_por.username }}</p>
+      <p>Por: {% if qr.creado_por %}{{ qr.creado_por.get_full_name|default:qr.creado_por.username }}{% else %}—{% endif %}</p>
       {% endif %}
     </div>
   </div>

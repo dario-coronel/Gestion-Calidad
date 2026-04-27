@@ -50,9 +50,13 @@
     </div>
 
     <div>
-      <label class="form-label">Área</label>
-      <input type="text" name="area" value="{{ filtros.area }}"
-             class="form-input" placeholder="Filtrar por área...">
+      <label class="form-label">Sector</label>
+      <select name="sector" class="form-input">
+        <option value="">Todos</option>
+        {% for s in sectores %}
+        <option value="{{ s.pk }}" {% if filtros.sector == s.pk|stringformat:'s' %}selected{% endif %}>{{ s.nombre }}</option>
+        {% endfor %}
+      </select>
     </div>
   </form>
 </div>

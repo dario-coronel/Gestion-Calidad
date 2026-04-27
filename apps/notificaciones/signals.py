@@ -17,11 +17,11 @@ def nc_creada_o_actualizada(sender, instance, created, **kwargs):
         url = ''
 
     if created:
-        area_nc = getattr(instance, 'area', None) or '—'
+        sector_nc = instance.sector.nombre if getattr(instance, 'sector', None) else '—'
         notificar_calidad(
             tipo=TipoNotificacion.NC_PENDIENTE,
             titulo=f'Nueva NC registrada: {instance.folio}',
-            mensaje=f'Se registró la NC {instance.folio} en el área {area_nc}. '
+            mensaje=f'Se registró la NC {instance.folio} en el sector {sector_nc}. '
                     f'Prioridad: {instance.get_prioridad_display()}.',
             url_destino=url,
         )

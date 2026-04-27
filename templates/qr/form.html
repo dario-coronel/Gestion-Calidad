@@ -7,15 +7,18 @@
 <div class="max-w-3xl">
   <form method="post" enctype="multipart/form-data" class="space-y-5">
     {% csrf_token %}
+
+    {# ── Sección 1: Datos generales ── #}
     <div class="card space-y-5">
+      <h3 class="text-sm font-semibold text-gray-700 border-b pb-2">Datos del Reclamo</h3>
       <div class="grid grid-cols-2 gap-5">
         <div>
           <label class="form-label">Tipo de reclamo *</label>
           {{ form.tipo_reclamo }}
         </div>
         <div>
-          <label class="form-label">Área de origen *</label>
-          {{ form.area_origen }}
+          <label class="form-label">Sector de origen</label>
+          {{ form.sector }}
         </div>
       </div>
       <div class="grid grid-cols-2 gap-5">
@@ -34,21 +37,54 @@
           {{ form.prioridad }}
         </div>
         <div>
-          <label class="form-label">Clasificación *</label>
+          <label class="form-label">Clasificación</label>
           {{ form.clasificacion }}
         </div>
       </div>
-      <div>
-        <label class="form-label">Responsable</label>
-        {{ form.responsable }}
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <label class="form-label">Responsable</label>
+          {{ form.responsable }}
+        </div>
+        <div>
+          <label class="form-label">Quién recibe la queja</label>
+          {{ form.quien_recibe }}
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <label class="form-label">Tiempo de respuesta (días)</label>
+          {{ form.dias_resolucion }}
+        </div>
+        <div>
+          <label class="form-label">Fecha de cierre</label>
+          {{ form.fecha_cierre }}
+        </div>
       </div>
       <div>
-        <label class="form-label">Descripción *</label>
+        <label class="form-label">Descripción del reclamo *</label>
         {{ form.descripcion }}
       </div>
+    </div>
+
+    {# ── Sección 2: Gestión ── #}
+    <div class="card space-y-5">
+      <h3 class="text-sm font-semibold text-gray-700 border-b pb-2">Gestión y Seguimiento</h3>
       <div>
-        <label class="form-label">Días de resolución (máximo)</label>
-        {{ form.dias_resolucion }}
+        <label class="form-label">Detalle visita al cliente</label>
+        {{ form.detalle_visita_cliente }}
+      </div>
+      <div>
+        <label class="form-label">Acciones a tomar</label>
+        {{ form.acciones_a_tomar }}
+      </div>
+      <div>
+        <label class="form-label">Resultado</label>
+        {{ form.resultado }}
+      </div>
+      <div class="flex items-center gap-3">
+        {{ form.envio_mail }}
+        <label class="text-sm text-gray-700">Se envió mail al cliente</label>
       </div>
     </div>
 

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} — SGC{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md">
+  <form method="post" class="card space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="form-label">Nombre del sector *</label>
+      <input type="text" name="nombre" value="{{ sector.nombre|default:'' }}"
+             class="form-input" placeholder="Ej: Producción Balanceado" required autofocus>
+    </div>
+
+    {% if sector %}
+    <div class="flex items-center gap-3">
+      <input type="checkbox" name="activo" id="id_activo" class="h-4 w-4 text-teal-600 border-gray-300 rounded"
+             {% if sector.activo %}checked{% endif %}>
+      <label for="id_activo" class="text-sm text-gray-700">Sector activo</label>
+    </div>
+    {% endif %}
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn-primary">{{ accion }}</button>
+      <a href="{% url 'core:sectores_lista' %}" class="btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

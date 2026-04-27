@@ -20,6 +20,10 @@
 
       <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
         <div>
+          <dt class="form-label mb-0.5">Sector</dt>
+          <dd class="text-gray-800">{{ proyecto.sector.nombre|default:"—" }}</dd>
+        </div>
+        <div>
           <dt class="form-label mb-0.5">Origen</dt>
           <dd class="text-gray-800">{{ proyecto.get_origen_display }}</dd>
         </div>
@@ -61,7 +65,7 @@
     <div class="card space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-semibold">Subtareas</h3>
-        <span class="text-xs text-gray-400">{{ proyecto.subtareas.filter(completada=True).count|default:"0" }} completadas</span>
+        <span class="text-xs text-gray-400">{{ subtareas_completadas|default:"0" }} completadas</span>
       </div>
 
       <ul class="space-y-2">
@@ -123,12 +127,12 @@
     {% endif %}
 
     <!-- Verificación -->
-    {% if proyecto.verificacion %}
+    {% if proyecto.verificacion_eficacia %}
     <div class="card">
       <h3 class="text-sm font-semibold mb-2">Verificación de eficacia</h3>
       <div class="flex items-center justify-between">
-        <span class="text-sm text-gray-600">{{ proyecto.verificacion.get_estado_display }}</span>
-        <a href="{% url 'verificacion:detalle' proyecto.verificacion.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver verificación →</a>
+        <span class="text-sm text-gray-600">{{ proyecto.verificacion_eficacia.get_estado_display }}</span>
+        <a href="{% url 'verificacion:detalle' proyecto.verificacion_eficacia.pk %}" class="text-teal-700 hover:underline text-xs font-medium">Ver verificación →</a>
       </div>
     </div>
     {% endif %}
@@ -158,7 +162,7 @@
     <div class="card text-xs text-gray-400 space-y-1">
       <p>Creado: {{ proyecto.creado_en|date:"d/m/Y H:i" }}</p>
       {% if proyecto.creado_por %}
-      <p>Por: {{ proyecto.creado_por.get_full_name|default:proyecto.creado_por.username }}</p>
+      <p>Por: {% if proyecto.creado_por %}{{ proyecto.creado_por.get_full_name|default:proyecto.creado_por.username }}{% else %}—{% endif %}</p>
       {% endif %}
     </div>
 

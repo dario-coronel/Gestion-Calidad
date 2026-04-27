@@ -14,8 +14,8 @@ class AdjuntoNCInline(admin.TabularInline):
 
 @admin.register(NoConformidad)
 class NoConformidadAdmin(admin.ModelAdmin):
-    list_display = ('folio', 'fecha', 'area', 'prioridad', 'clasificacion', 'estado', 'riesgo_calculado')
-    list_filter = ('estado', 'prioridad', 'clasificacion', 'area')
+    list_display = ('folio', 'fecha', 'sector', 'prioridad', 'clasificacion', 'estado', 'riesgo_calculado')
+    list_filter = ('estado', 'prioridad', 'clasificacion', 'sector')
     search_fields = ('folio', 'descripcion', 'id_muestra_lote')
     inlines = [CincoPorquesInline, AdjuntoNCInline]
     readonly_fields = ('folio', 'creado_en', 'actualizado_en')

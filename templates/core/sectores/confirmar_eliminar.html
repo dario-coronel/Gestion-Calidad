@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar Sector — SGC{% endblock %}
+{% block page_title %}Eliminar Sector{% endblock %}
+
+{% block content %}
+<div class="max-w-md">
+  <div class="card space-y-4">
+    <p class="text-sm text-gray-700">
+      ¿Confirmar eliminación del sector <strong>{{ sector.nombre }}</strong>?
+      Esta acción no se puede deshacer.
+    </p>
+    <p class="text-xs text-red-500">
+      Si hay NCs, QRs u OMs asociadas a este sector, la eliminación fallará.
+    </p>
+    <div class="flex gap-3">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger">Eliminar</button>
+      </form>
+      <a href="{% url 'core:sectores_lista' %}" class="btn-secondary">Cancelar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

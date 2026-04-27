@@ -1,3 +1,11 @@
 ﻿from django.contrib import admin
-# Registrar modelos de core en el admin cuando sean necesarios
+
+from .models import Sector
+
+
+@admin.register(Sector)
+class SectorAdmin(admin.ModelAdmin):
+	list_display = ('nombre', 'activo')
+	list_filter = ('activo',)
+	search_fields = ('nombre',)
 

@@ -7,7 +7,9 @@
 <div class="max-w-3xl">
   <form method="post" class="space-y-5">
     {% csrf_token %}
+
     <div class="card space-y-5">
+      <h3 class="text-sm font-semibold text-gray-700 border-b pb-2">Datos generales</h3>
       <div class="grid grid-cols-2 gap-5">
         <div>
           <label class="form-label">Clasificación *</label>
@@ -28,13 +30,24 @@
           {{ form.responsable }}
         </div>
       </div>
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <label class="form-label">Beneficio potencial</label>
+          {{ form.beneficio_potencial }}
+        </div>
+        <div>
+          <label class="form-label">Rango de evaluación</label>
+          {{ form.rango_evaluacion }}
+          <p class="mt-1 text-xs text-gray-400">La fecha de evaluación se calcula automáticamente.</p>
+        </div>
+      </div>
       <div>
         <label class="form-label">Descripción *</label>
         {{ form.descripcion }}
       </div>
       <div>
-        <label class="form-label">Beneficio potencial</label>
-        {{ form.beneficio_potencial }}
+        <label class="form-label">Problema a mejorar</label>
+        {{ form.problema_a_mejorar }}
       </div>
     </div>
 

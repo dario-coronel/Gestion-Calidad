@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-stone-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDP Agro | SGC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0f766e',
+            sidebar: '#0f2027',
+            accent: '#84cc16'
+          },
+          boxShadow: {
+            soft: '0 20px 60px rgba(15, 32, 39, 0.12)'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-full bg-[radial-gradient(circle_at_top,#ecfeff_0%,#f8fafc_42%,#f5f5f4_100%)] text-slate-800">
+  <div class="min-h-screen flex flex-col">
+    <header class="px-6 py-5 md:px-10">
+      <div class="mx-auto max-w-6xl flex items-center justify-between rounded-full border border-white/70 bg-white/80 px-5 py-3 shadow-sm backdrop-blur">
+        <div class="flex items-center gap-3">
+          <img src="{% static 'img/logo_edp.jpg' %}" alt="EDP Agro" class="h-12 w-auto object-contain">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Sistema SGC</p>
+            <p class="text-sm text-slate-500">Gestión de Calidad EDP Agroindustrial</p>
+          </div>
+        </div>
+        <a href="{% url 'accounts:login' %}"
+           class="inline-flex items-center rounded-full bg-sidebar px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-900">
+          Ingresar
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-1 px-6 pb-10 md:px-10">
+      <section class="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+        <div class="py-6 md:py-12">
+          <span class="inline-flex items-center rounded-full border border-primary/15 bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-primary shadow-sm">
+            Calidad, trazabilidad y mejora continua
+          </span>
+          <h1 class="mt-6 max-w-3xl text-4xl font-black leading-tight text-slate-900 md:text-6xl">
+            Plataforma de gestión para no conformidades, acciones y seguimiento operativo.
+          </h1>
+          <p class="mt-6 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
+            Centralizá incidentes, proyectos, verificaciones y reportes en un entorno único para EDP Agro y Primia, con visibilidad clara del estado de cada proceso.
+          </p>
+
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href="{% url 'accounts:login' %}"
+               class="inline-flex items-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 shadow-soft">
+              Acceder al sistema
+            </a>
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'dashboard:index' %}"
+               class="inline-flex items-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50">
+              Ir al dashboard
+            </a>
+            {% endif %}
+          </div>
+
+          <div class="mt-10 grid gap-4 sm:grid-cols-3">
+            <div class="rounded-2xl border border-white/80 bg-white/85 p-5 shadow-sm">
+              <p class="text-2xl font-black text-sidebar">NC</p>
+              <p class="mt-1 text-sm text-slate-500">Registro y análisis de no conformidades con 5 Porqués y seguimiento.</p>
+            </div>
+            <div class="rounded-2xl border border-white/80 bg-white/85 p-5 shadow-sm">
+              <p class="text-2xl font-black text-sidebar">OM</p>
+              <p class="mt-1 text-sm text-slate-500">Órdenes, mejoras y control del avance operativo por responsable.</p>
+            </div>
+            <div class="rounded-2xl border border-white/80 bg-white/85 p-5 shadow-sm">
+              <p class="text-2xl font-black text-sidebar">KPIs</p>
+              <p class="mt-1 text-sm text-slate-500">Paneles y reportes para revisión, trazabilidad y decisiones rápidas.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative py-4 lg:py-0">
+          <div class="absolute -left-8 top-10 hidden h-28 w-28 rounded-full bg-accent/15 blur-2xl lg:block"></div>
+          <div class="absolute -right-4 bottom-8 hidden h-36 w-36 rounded-full bg-primary/15 blur-2xl lg:block"></div>
+          <div class="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-soft backdrop-blur">
+            <div class="rounded-[1.5rem] bg-sidebar p-6 text-white">
+              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-300">Vista unificada</p>
+              <h2 class="mt-3 text-2xl font-bold">Controlá el estado del sistema desde una sola entrada.</h2>
+              <div class="mt-6 space-y-3 text-sm text-white/75">
+                <div class="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3">
+                  <span>No conformidades</span>
+                  <span class="font-semibold text-white">Seguimiento</span>
+                </div>
+                <div class="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3">
+                  <span>Proyectos</span>
+                  <span class="font-semibold text-white">Gantt y subtareas</span>
+                </div>
+                <div class="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3">
+                  <span>Verificaciones</span>
+                  <span class="font-semibold text-white">Trazabilidad</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-5 rounded-[1.5rem] border border-slate-200 bg-stone-50 p-5">
+              <p class="text-sm font-semibold text-slate-700">Acceso principal</p>
+              <p class="mt-2 text-sm leading-6 text-slate-500">Ingresá con tu cuenta para operar sobre NC, QR, OM, proyectos y reportes del sistema.</p>
+              <a href="{% url 'accounts:login' %}"
+                 class="mt-5 inline-flex items-center rounded-xl bg-sidebar px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-900">
+                Abrir inicio de sesión
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

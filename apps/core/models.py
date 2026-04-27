@@ -2,6 +2,20 @@
 from django.conf import settings
 
 
+class Sector(models.Model):
+    """Sectores de la empresa. Tabla transversal usada por NC, QR y OM."""
+    nombre = models.CharField(max_length=100, unique=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = 'Sector'
+        verbose_name_plural = 'Sectores'
+
+    def __str__(self):
+        return self.nombre
+
+
 class ModeloBase(models.Model):
     """Modelo abstracto con campos de auditoría compartidos por todas las entidades."""
     creado_en = models.DateTimeField(auto_now_add=True)

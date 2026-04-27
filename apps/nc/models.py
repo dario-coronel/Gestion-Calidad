@@ -1,6 +1,6 @@
 ﻿from django.db import models
 from django.utils import timezone
-from apps.core.models import ModeloBase
+from apps.core.models import ModeloBase, Sector
 from django.conf import settings
 
 
@@ -28,11 +28,33 @@ class ClasificacionNC(models.TextChoices):
     LOGISTICA = 'logistica', 'Logística'
 
 
+class OrigenNC(models.TextChoices):
+    DIRECTO = 'directo', 'Detección Directa'
+    QR = 'qr', 'Queja / Reclamo'
+    OM = 'om', 'Oportunidad de Mejora'
+
+
+class TipoContaminacion(models.TextChoices):
+    REPROCESO = 'reproceso', 'Reproceso'
+    VENTA = 'venta', 'Venta'
+    OTROS = 'otros', 'Otros'
+
+
+class EficaciaNC(models.TextChoices):
+    PENDIENTE = 'pendiente', 'Pendiente de evaluación'
+    EFICAZ = 'eficaz', 'Eficaz'
+    NO_EFICAZ = 'no_eficaz', 'No Eficaz'
+
+
 class NoConformidad(ModeloBase):
     """No Conformidad detectada en el sistema de gestión de calidad."""
     folio = models.CharField(max_length=20, unique=True, editable=False)
     fecha = models.DateField(default=timezone.now)
-    area = models.CharField(max_length=100)
+    sector = models.ForeignKey(
+        Sector, on_delete=models.PROTECT,
+        null=True, blank=True, related_name='nc_sector',
+        verbose_name='Sector'
+    )
     responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
         related_name='nc_responsable'
@@ -43,6 +65,68 @@ class NoConformidad(ModeloBase):
     prioridad = models.CharField(max_length=10, choices=PrioridadNC, default=PrioridadNC.MEDIA)
     clasificacion = models.CharField(max_length=30, choices=ClasificacionNC)
     estado = models.CharField(max_length=20, choices=EstadoNC, default=EstadoNC.BORRADOR)
+
+    # Origen / trazabilidad
+    origen = models.CharField(
+        max_length=10, choices=OrigenNC, default=OrigenNC.DIRECTO,
+        help_text='Origen de esta No Conformidad'
+    )
+    qr_relacionada = models.ForeignKey(
+        'qr.QuejaReclamo', on_delete=models.PROTECT,
+        null=True, blank=True, related_name='nc_relacionadas',
+        verbose_name='QyR asociada'
+    )
+    om_relacionada = models.ForeignKey(
+        'om.OportunidadMejora', on_delete=models.PROTECT,
+        null=True, blank=True, related_name='nc_relacionadas',
+        verbose_name='OM asociada'
+    )
+    nc_origen = models.ForeignKey(
+        'self', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='nc_generadas',
+        verbose_name='NC origen (resultó No Eficaz)',
+        help_text='NC previa que generó esta como seguimiento'
+    )
+
+    # Corrección inmediata
+    descripcion_correccion = models.TextField(
+        blank=True,
+        verbose_name='Corrección inmediata',
+        help_text='Descripción de la corrección aplicada de inmediato'
+    )
+
+    # Contaminación cruzada (aplica cuando clasificacion=PRODUCTO)
+    contaminacion_cruzada = models.BooleanField(
+        default=False, verbose_name='¿Contaminación cruzada?'
+    )
+    tipo_contaminacion = models.CharField(
+        max_length=10, choices=TipoContaminacion, blank=True,
+        verbose_name='Tipo de contaminación'
+    )
+    obs_contaminacion = models.TextField(
+        blank=True, verbose_name='Observaciones (contaminación)'
+    )
+
+    # Notificación al cliente
+    notificar_cliente = models.BooleanField(
+        default=False, verbose_name='Notificar al cliente'
+    )
+    email_cliente = models.EmailField(
+        blank=True, verbose_name='E-mail del cliente'
+    )
+
+    # Evidencia de implementación
+    evidencia = models.TextField(
+        blank=True, verbose_name='Evidencia',
+        help_text='Descripción de la evidencia que demuestra la implementación de la corrección'
+    )
+
+    # Eficacia de la acción correctiva (evaluada por Calidad)
+    eficacia = models.CharField(
+        max_length=10, choices=EficaciaNC, default=EficaciaNC.PENDIENTE,
+        verbose_name='Eficacia de la acción'
+    )
+
     # Matriz de riesgo
     probabilidad = models.PositiveSmallIntegerField(null=True, blank=True, help_text='1-5')
     impacto = models.PositiveSmallIntegerField(null=True, blank=True, help_text='1-5')

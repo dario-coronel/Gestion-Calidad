@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from .models import VerificacionEficacia, EstadoVerificacion
 from .forms import VerificacionForm
+from apps.nc.models import CincoPorques, EficaciaNC, EstadoNC, NoConformidad, OrigenNC
 
 
 COLORES_ESTADO = {
@@ -48,6 +49,33 @@ def detalle(request, pk):
                 v.fecha_realizada = timezone.now().date()
 
             v.save()
+
+            if v.estado == EstadoVerificacion.NO_EFICAZ and not v.nc_generada_id:
+                proyecto = v.proyecto
+                nueva_nc = NoConformidad.objects.create(
+                    fecha=timezone.now().date(),
+                    sector=proyecto.sector,
+                    responsable=proyecto.responsable,
+                    descripcion=(
+                        f'Verificación no eficaz del proyecto {proyecto.folio}: {proyecto.nombre}. '
+                        f'Resultado: {v.resultado_descripcion or "Sin detalle adicional."}'
+                    ),
+                    prioridad=proyecto.prioridad,
+                    clasificacion='proceso',
+                    estado=EstadoNC.BORRADOR,
+                    origen=(OrigenNC.OM if proyecto.om_id else OrigenNC.DIRECTO),
+                    om_relacionada=proyecto.om,
+                    nc_origen=proyecto.nc,
+                    eficacia=EficaciaNC.PENDIENTE,
+                    creado_por=request.user,
+                    actualizado_por=request.user,
+                )
+                CincoPorques.objects.create(nc=nueva_nc, etapa_1=nueva_nc.descripcion)
+                v.nc_generada = nueva_nc
+                v.save(update_fields=['nc_generada', 'actualizado_por', 'actualizado_en'])
+                messages.warning(request, f'Verificación no eficaz. Se generó automáticamente la NC {nueva_nc.folio}.')
+                return redirect('verificacion:detalle', pk=pk)
+
             messages.success(request, 'Verificación actualizada.')
             return redirect('verificacion:detalle', pk=pk)
 

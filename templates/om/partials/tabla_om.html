@@ -16,7 +16,7 @@
       <tr class="hover:bg-gray-50">
         <td class="px-4 py-3 font-mono font-semibold">{{ om.folio }}</td>
         <td class="px-4 py-3 text-gray-600">{{ om.get_clasificacion_display }}</td>
-        <td class="px-4 py-3 text-gray-600">{{ om.sector|default:"—" }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ om.sector.nombre|default:"—" }}</td>
         <td class="px-4 py-3">
           <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
             {% if om.estado == 'cerrada' %}bg-green-100 text-green-700

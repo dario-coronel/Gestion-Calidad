@@ -1,7 +1,7 @@
 ﻿from django.db import models
 from django.utils import timezone
 from datetime import timedelta
-from apps.core.models import ModeloBase
+from apps.core.models import ModeloBase, Sector
 from django.conf import settings
 
 
@@ -33,6 +33,11 @@ class Proyecto(ModeloBase):
     """
     folio = models.CharField(max_length=20, unique=True, editable=False)
     nombre = models.CharField(max_length=255)
+    sector = models.ForeignKey(
+        Sector, null=True, blank=True,
+        on_delete=models.PROTECT, related_name='proyectos',
+        verbose_name='Sector'
+    )
     prioridad = models.CharField(max_length=10, choices=PrioridadProyecto, default=PrioridadProyecto.MEDIA)
     proveedor = models.CharField(max_length=200, blank=True, help_text='Proveedor externo o "Interno"')
     fecha_inicio = models.DateField()
@@ -60,6 +65,25 @@ class Proyecto(ModeloBase):
 
     def __str__(self):
         return f'{self.folio} - {self.nombre}'
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        errores = {}
+        if self.origen == OrigenProyecto.NC:
+            if not self.nc_id:
+                errores['nc'] = 'Seleccioná la No Conformidad de origen.'
+            self.om = None
+        elif self.origen == OrigenProyecto.OM:
+            if not self.om_id:
+                errores['om'] = 'Seleccioná la Oportunidad de Mejora de origen.'
+            self.nc = None
+        else:
+            self.nc = None
+            self.om = None
+
+        if errores:
+            raise ValidationError(errores)
 
     @property
     def fecha_fin(self):

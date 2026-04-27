@@ -33,10 +33,10 @@ def index(request):
 
     # ── Matriz de riesgo 5×5 ──────────────────────────────────────
     _matrix = {}
-    for nc in nc_qs.filter(probabilidad__isnull=False, impacto__isnull=False).only(
-            'pk', 'folio', 'area', 'probabilidad', 'impacto'):
+    for nc in nc_qs.filter(probabilidad__isnull=False, impacto__isnull=False).select_related('sector').only(
+            'pk', 'folio', 'sector__nombre', 'probabilidad', 'impacto'):
         _matrix.setdefault((nc.probabilidad, nc.impacto), []).append(
-            {'folio': nc.folio, 'pk': nc.pk, 'area': nc.area}
+            {'folio': nc.folio, 'pk': nc.pk, 'sector': nc.sector.nombre if nc.sector else '—'}
         )
 
     def _nivel(r):

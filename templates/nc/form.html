@@ -4,7 +4,7 @@
 {% block page_title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto">
+<div class="max-w-3xl mx-auto">
   <div class="card">
     <form method="post" enctype="multipart/form-data" novalidate>
       {% csrf_token %}
@@ -16,9 +16,16 @@
         <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
           {{ nc.get_estado_display }}
         </span>
+        {% if nc.nc_origen %}
+        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+          Seguimiento de {{ nc.nc_origen.folio }}
+        </span>
+        {% endif %}
       </div>
       {% endif %}
 
+      {# ── SECCIÓN 1: Datos generales ── #}
+      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Datos Generales</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         <div>
@@ -28,9 +35,9 @@
         </div>
 
         <div>
-          <label class="form-label">Área <span class="text-danger">*</span></label>
-          {{ form.area }}
-          {% if form.area.errors %}<p class="mt-1 text-xs text-danger">{{ form.area.errors|join:", " }}</p>{% endif %}
+          <label class="form-label">Área / Sector <span class="text-danger">*</span></label>
+          {{ form.sector }}
+          {% if form.sector.errors %}<p class="mt-1 text-xs text-danger">{{ form.sector.errors|join:", " }}</p>{% endif %}
         </div>
 
         <div>
@@ -61,16 +68,99 @@
       </div>
 
       <div class="mt-4">
-        <label class="form-label">Descripción detallada <span class="text-danger">*</span></label>
+        <label class="form-label">Descripción del problema <span class="text-danger">*</span></label>
         {{ form.descripcion }}
         {% if form.descripcion.errors %}<p class="mt-1 text-xs text-danger">{{ form.descripcion.errors|join:", " }}</p>{% endif %}
       </div>
 
-      {# Adjunto #}
-      <div class="mt-4">
-        <label class="form-label">Adjuntar evidencia (foto, PDF)</label>
-        {{ adjunto_form.archivo }}
-        <p class="mt-1 text-xs text-gray-400">Tamaño máximo: 10 MB. Tipos: JPG, PNG, PDF, Excel.</p>
+      {# ── SECCIÓN 2: Corrección inmediata ── #}
+      <div class="mt-6 pt-4 border-t border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Corrección Inmediata</h3>
+        <div>
+          <label class="form-label">Descripción de la corrección aplicada</label>
+          {{ form.descripcion_correccion }}
+        </div>
+      </div>
+
+      {# ── SECCIÓN 3: Origen ── #}
+      <div class="mt-6 pt-4 border-t border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Origen</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Origen de la NC <span class="text-danger">*</span></label>
+            {{ form.origen }}
+          </div>
+        </div>
+
+        <div id="bloque_qr" class="mt-3 hidden">
+          <label class="form-label">QyR asociada <span class="text-danger">*</span></label>
+          {{ form.qr_relacionada }}
+          {% if form.qr_relacionada.errors %}<p class="mt-1 text-xs text-danger">{{ form.qr_relacionada.errors|join:", " }}</p>{% endif %}
+        </div>
+
+        <div id="bloque_om" class="mt-3 hidden">
+          <label class="form-label">OM asociada <span class="text-danger">*</span></label>
+          {{ form.om_relacionada }}
+          {% if form.om_relacionada.errors %}<p class="mt-1 text-xs text-danger">{{ form.om_relacionada.errors|join:", " }}</p>{% endif %}
+        </div>
+      </div>
+
+      {# ── SECCIÓN 4: Contaminación cruzada (solo si Clasificación = Producto) ── #}
+      <div id="bloque_contaminacion" class="mt-6 pt-4 border-t border-gray-100 hidden">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Contaminación Cruzada</h3>
+        <label class="flex items-center gap-2 cursor-pointer mb-3">
+          {{ form.contaminacion_cruzada }}
+          <span class="text-sm font-medium text-gray-700">¿Hubo contaminación cruzada?</span>
+        </label>
+
+        <div id="bloque_tipo_contaminacion" class="hidden">
+          <label class="form-label">Tipo de contaminación cruzada <span class="text-danger">*</span></label>
+          <div class="flex gap-6 mt-1">
+            {% for val, lbl in form.tipo_contaminacion.field.choices %}
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="tipo_contaminacion" value="{{ val }}"
+                     class="form-radio text-primary"
+                     {% if form.tipo_contaminacion.value == val %}checked{% endif %}>
+              <span class="text-sm">{{ lbl }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% if form.tipo_contaminacion.errors %}<p class="mt-1 text-xs text-danger">{{ form.tipo_contaminacion.errors|join:", " }}</p>{% endif %}
+
+          <div class="mt-3">
+            <label class="form-label">Observaciones</label>
+            {{ form.obs_contaminacion }}
+          </div>
+        </div>
+      </div>
+
+      {# ── SECCIÓN 5: Notificación al cliente ── #}
+      <div class="mt-6 pt-4 border-t border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Notificación al Cliente</h3>
+        <label class="flex items-center gap-2 cursor-pointer mb-3">
+          {{ form.notificar_cliente }}
+          <span class="text-sm font-medium text-gray-700">Enviar mail al cliente</span>
+        </label>
+        <div id="bloque_email_cliente" class="hidden">
+          <label class="form-label">E-mail del cliente <span class="text-danger">*</span></label>
+          {{ form.email_cliente }}
+          {% if form.email_cliente.errors %}<p class="mt-1 text-xs text-danger">{{ form.email_cliente.errors|join:", " }}</p>{% endif %}
+        </div>
+      </div>
+
+      {# ── SECCIÓN 6: Evidencia ── #}
+      <div class="mt-6 pt-4 border-t border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Evidencia</h3>
+        <div>
+          <label class="form-label">Descripción de evidencia</label>
+          {{ form.evidencia }}
+          <p class="mt-1 text-xs text-gray-400">Describí qué evidencia respalda la detección y corrección.</p>
+        </div>
+        <div class="mt-3">
+          <label class="form-label">Adjuntar archivo (foto, PDF)</label>
+          {{ adjunto_form.archivo }}
+          <p class="mt-1 text-xs text-gray-400">Tamaño máximo: 10 MB. Tipos: JPG, PNG, PDF, Excel.</p>
+        </div>
       </div>
 
       {# Errores generales #}
@@ -89,4 +179,61 @@
     </form>
   </div>
 </div>
+
+<script>
+(function () {
+  // ── Origen ──────────────────────────────────────────────
+  var origenSel = document.getElementById('id_origen');
+  var bloqueQR  = document.getElementById('bloque_qr');
+  var bloqueOM  = document.getElementById('bloque_om');
+
+  function toggleOrigen() {
+    var v = origenSel ? origenSel.value : '';
+    bloqueQR.classList.toggle('hidden', v !== 'qr');
+    bloqueOM.classList.toggle('hidden', v !== 'om');
+  }
+  if (origenSel) {
+    origenSel.addEventListener('change', toggleOrigen);
+    toggleOrigen();
+  }
+
+  // ── Clasificación → Contaminación cruzada ──────────────
+  var clasifSel        = document.getElementById('id_clasificacion');
+  var bloqueContam     = document.getElementById('bloque_contaminacion');
+  var checkContam      = document.getElementById('id_contaminacion_cruzada');
+  var bloqueTipoContam = document.getElementById('bloque_tipo_contaminacion');
+
+  function toggleContaminacion() {
+    var esProducto = clasifSel && clasifSel.value === 'producto';
+    bloqueContam.classList.toggle('hidden', !esProducto);
+    if (!esProducto && checkContam) checkContam.checked = false;
+    toggleTipoContaminacion();
+  }
+
+  function toggleTipoContaminacion() {
+    var visible = checkContam && checkContam.checked;
+    bloqueTipoContam.classList.toggle('hidden', !visible);
+  }
+
+  if (clasifSel) {
+    clasifSel.addEventListener('change', toggleContaminacion);
+    toggleContaminacion();
+  }
+  if (checkContam) {
+    checkContam.addEventListener('change', toggleTipoContaminacion);
+  }
+
+  // ── Notificar cliente → Email ───────────────────────────
+  var checkNotif  = document.getElementById('id_notificar_cliente');
+  var bloqueEmail = document.getElementById('bloque_email_cliente');
+
+  function toggleEmail() {
+    bloqueEmail.classList.toggle('hidden', !checkNotif.checked);
+  }
+  if (checkNotif) {
+    checkNotif.addEventListener('change', toggleEmail);
+    toggleEmail();
+  }
+})();
+</script>
 {% endblock %}
