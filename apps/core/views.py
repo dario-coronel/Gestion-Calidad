@@ -5,13 +5,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Sector
 
 
-def _solo_admin(request):
-    return request.user.is_superuser or getattr(request.user, 'es_admin', False)
+def _puede_gestionar_sectores(request):
+    return request.user.has_perm('core.change_sector')
 
 
 @login_required
 def sectores_lista(request):
-    if not _solo_admin(request):
+    if not _puede_gestionar_sectores(request):
         messages.error(request, 'Solo el administrador puede gestionar sectores.')
         return redirect('dashboard:index')
     sectores = Sector.objects.all()
@@ -20,7 +20,7 @@ def sectores_lista(request):
 
 @login_required
 def sector_crear(request):
-    if not _solo_admin(request):
+    if not _puede_gestionar_sectores(request):
         messages.error(request, 'Solo el administrador puede gestionar sectores.')
         return redirect('core:sectores_lista')
     if request.method == 'POST':
@@ -39,7 +39,7 @@ def sector_crear(request):
 
 @login_required
 def sector_editar(request, pk):
-    if not _solo_admin(request):
+    if not _puede_gestionar_sectores(request):
         messages.error(request, 'Solo el administrador puede gestionar sectores.')
         return redirect('core:sectores_lista')
     sector = get_object_or_404(Sector, pk=pk)
@@ -66,7 +66,7 @@ def sector_editar(request, pk):
 
 @login_required
 def sector_eliminar(request, pk):
-    if not _solo_admin(request):
+    if not _puede_gestionar_sectores(request):
         messages.error(request, 'Solo el administrador puede gestionar sectores.')
         return redirect('core:sectores_lista')
     sector = get_object_or_404(Sector, pk=pk)

@@ -44,7 +44,7 @@ def lista(request):
 
 @login_required
 def crear(request):
-    puede_cargar = request.user.es_operario or request.user.es_calidad or request.user.is_superuser
+    puede_cargar = request.user.has_perm('om.add_oportunidadmejora')
     if not puede_cargar:
         messages.error(request, 'No tenés permisos para cargar Oportunidades de Mejora.')
         return redirect('om:lista')
@@ -54,7 +54,7 @@ def crear(request):
         adjunto_form = AdjuntoOMForm(request.POST, request.FILES)
         if form.is_valid():
             om = form.save(commit=False)
-            if request.user.es_operario:
+            if not request.user.has_perm('om.change_oportunidadmejora'):
                 om.estado = EstadoOM.EN_REVISION
             om.creado_por = request.user
             om.actualizado_por = request.user
@@ -82,10 +82,10 @@ def crear(request):
 @login_required
 def detalle(request, pk):
     om = get_object_or_404(OportunidadMejora, pk=pk, eliminado=False)
-    puede_gestionar = request.user.es_calidad or request.user.is_superuser
+    puede_gestionar = request.user.has_perm('om.change_oportunidadmejora')
     puede_editar = (
         puede_gestionar
-        or (request.user.es_operario and om.responsable_id == request.user.id and om.estado == EstadoOM.BORRADOR)
+        or (request.user.has_perm('om.add_oportunidadmejora') and om.responsable_id == request.user.id and om.estado == EstadoOM.BORRADOR)
     )
 
     if request.method == 'POST' and puede_gestionar:
@@ -172,9 +172,8 @@ def detalle(request, pk):
 def editar(request, pk):
     om = get_object_or_404(OportunidadMejora, pk=pk, eliminado=False)
     puede_editar = (
-        request.user.es_calidad
-        or request.user.is_superuser
-        or (request.user.es_operario and om.responsable_id == request.user.id and om.estado == EstadoOM.BORRADOR)
+        request.user.has_perm('om.change_oportunidadmejora')
+        or (request.user.has_perm('om.add_oportunidadmejora') and om.responsable_id == request.user.id and om.estado == EstadoOM.BORRADOR)
     )
     if not puede_editar:
         messages.error(request, 'No tenés permisos para editar esta OM.')
@@ -184,7 +183,7 @@ def editar(request, pk):
         form = OportunidadMejoraForm(request.POST, instance=om)
         if form.is_valid():
             om = form.save(commit=False)
-            if request.user.es_operario:
+            if not request.user.has_perm('om.change_oportunidadmejora'):
                 om.estado = EstadoOM.EN_REVISION
             om.actualizado_por = request.user
             om.save()

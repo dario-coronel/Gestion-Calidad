@@ -73,7 +73,7 @@ def lista(request):
 
 @login_required
 def crear(request):
-    puede_cargar = request.user.es_operario or request.user.es_calidad or request.user.is_superuser
+    puede_cargar = request.user.has_perm('nc.add_noconformidad')
     if not puede_cargar:
         messages.error(request, 'No tenés permisos para cargar No Conformidades.')
         return redirect('nc:lista')
@@ -84,7 +84,7 @@ def crear(request):
         if form.is_valid():
             nc = form.save(commit=False)
             # Lo cargado por operario entra al circuito de revisión de Calidad.
-            if request.user.es_operario:
+            if not request.user.has_perm('nc.change_noconformidad'):
                 nc.estado = EstadoNC.EN_REVISION
             nc.creado_por = request.user
             nc.actualizado_por = request.user
@@ -119,14 +119,14 @@ def detalle(request, pk):
     nc = get_object_or_404(NoConformidad, pk=pk, eliminado=False)
     cinco_p = getattr(nc, 'cinco_porques', None)
     # Auto-crear 5 Porqués si no existe (NCs importadas, seed, migradas, etc.)
-    if cinco_p is None and (request.user.es_calidad or request.user.is_superuser):
+    if cinco_p is None and request.user.has_perm('nc.change_noconformidad'):
         cinco_p = CincoPorques.objects.create(nc=nc, etapa_1=nc.descripcion)
     cinco_form = None
     matriz_form = None
-    puede_calidad = request.user.es_calidad or request.user.is_superuser
+    puede_calidad = request.user.has_perm('nc.change_noconformidad')
     puede_editar = (
         puede_calidad
-        or (request.user.es_operario and nc.responsable_id == request.user.id and nc.estado == EstadoNC.BORRADOR)
+        or (request.user.has_perm('nc.add_noconformidad') and nc.responsable_id == request.user.id and nc.estado == EstadoNC.BORRADOR)
     )
 
     if request.method == 'POST':
@@ -262,9 +262,8 @@ def detalle(request, pk):
 def editar(request, pk):
     nc = get_object_or_404(NoConformidad, pk=pk, eliminado=False)
     puede_editar = (
-        request.user.es_calidad
-        or request.user.is_superuser
-        or (request.user.es_operario and nc.responsable_id == request.user.id and nc.estado == EstadoNC.BORRADOR)
+        request.user.has_perm('nc.change_noconformidad')
+        or (request.user.has_perm('nc.add_noconformidad') and nc.responsable_id == request.user.id and nc.estado == EstadoNC.BORRADOR)
     )
     if not puede_editar:
         messages.error(request, 'No tenés permisos para editar esta NC.')
@@ -275,7 +274,7 @@ def editar(request, pk):
         if form.is_valid():
             nc = form.save(commit=False)
             # Si el operario corrige una NC devuelta, vuelve a revisión.
-            if request.user.es_operario:
+            if not request.user.has_perm('nc.change_noconformidad'):
                 nc.estado = EstadoNC.EN_REVISION
             nc.actualizado_por = request.user
             nc.save()

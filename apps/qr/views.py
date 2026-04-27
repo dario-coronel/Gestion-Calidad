@@ -46,7 +46,7 @@ def lista(request):
 
 @login_required
 def crear(request):
-    puede_cargar = request.user.es_operario or request.user.es_calidad or request.user.is_superuser
+    puede_cargar = request.user.has_perm('qr.add_quejareclamo')
     if not puede_cargar:
         messages.error(request, 'No tenés permisos para cargar Quejas/Reclamos.')
         return redirect('qr:lista')
@@ -56,7 +56,7 @@ def crear(request):
         adjunto_form = AdjuntoQRForm(request.POST, request.FILES)
         if form.is_valid():
             qr = form.save(commit=False)
-            if request.user.es_operario:
+            if not request.user.has_perm('qr.change_quejareclamo'):
                 qr.estado = EstadoQR.EN_REVISION
             qr.creado_por = request.user
             qr.actualizado_por = request.user
@@ -84,10 +84,10 @@ def crear(request):
 @login_required
 def detalle(request, pk):
     qr = get_object_or_404(QuejaReclamo, pk=pk, eliminado=False)
-    puede_gestionar = request.user.es_calidad or request.user.is_superuser
+    puede_gestionar = request.user.has_perm('qr.change_quejareclamo')
     puede_editar = (
         puede_gestionar
-        or (request.user.es_operario and qr.responsable_id == request.user.id and qr.estado == EstadoQR.BORRADOR)
+        or (request.user.has_perm('qr.add_quejareclamo') and qr.responsable_id == request.user.id and qr.estado == EstadoQR.BORRADOR)
     )
 
     if request.method == 'POST' and puede_gestionar:
@@ -137,9 +137,8 @@ def detalle(request, pk):
 def editar(request, pk):
     qr = get_object_or_404(QuejaReclamo, pk=pk, eliminado=False)
     puede_editar = (
-        request.user.es_calidad
-        or request.user.is_superuser
-        or (request.user.es_operario and qr.responsable_id == request.user.id and qr.estado == EstadoQR.BORRADOR)
+        request.user.has_perm('qr.change_quejareclamo')
+        or (request.user.has_perm('qr.add_quejareclamo') and qr.responsable_id == request.user.id and qr.estado == EstadoQR.BORRADOR)
     )
     if not puede_editar:
         messages.error(request, 'No tenés permisos para editar este reclamo.')
@@ -149,7 +148,7 @@ def editar(request, pk):
         form = QuejaReclamoForm(request.POST, instance=qr)
         if form.is_valid():
             qr = form.save(commit=False)
-            if request.user.es_operario:
+            if not request.user.has_perm('qr.change_quejareclamo'):
                 qr.estado = EstadoQR.EN_REVISION
             qr.actualizado_por = request.user
             qr.save()
