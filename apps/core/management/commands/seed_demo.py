@@ -148,6 +148,13 @@ class Command(BaseCommand):
                 u.set_password('Demo1234!')
                 u.save()
             usuarios[rol] = u
+        # Sincronizar grupos de seguridad para los usuarios demo
+        try:
+            from apps.accounts.signals import sincronizar_grupo
+            for u in usuarios.values():
+                sincronizar_grupo(u)
+        except Exception:
+            pass
         self.stdout.write(self.style.SUCCESS(f'  {len(usuarios)} usuarios listos (contraseña: Demo1234!)'))
 
         # ── Sectores ─────────────────────────────────────────────────────────

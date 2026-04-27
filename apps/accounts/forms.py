@@ -18,6 +18,10 @@ class UsuarioCreateForm(UserCreationForm):
         user.is_staff = user.rol == Rol.ADMIN
         if commit:
             user.save()
+            # El signal post_save sincroniza el grupo automáticamente;
+            # llamamos explícitamente para el caso commit=False externo.
+            from .signals import sincronizar_grupo
+            sincronizar_grupo(user)
         return user
 
 
@@ -34,4 +38,6 @@ class UsuarioUpdateForm(forms.ModelForm):
         user.is_staff = user.rol == Rol.ADMIN
         if commit:
             user.save()
+            from .signals import sincronizar_grupo
+            sincronizar_grupo(user)
         return user

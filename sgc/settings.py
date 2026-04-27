@@ -79,8 +79,16 @@ WSGI_APPLICATION = 'sgc.wsgi.application'
 
 # Base de datos
 # Dev: SQLite | Prod: setear DATABASE_URL en .env
+database_config = env.db('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
+
+if database_config['ENGINE'] != 'django.db.backends.sqlite3':
+    database_config['CONN_MAX_AGE'] = env.int('DB_CONN_MAX_AGE', default=60)
+    ssl_mode = env('DB_SSLMODE', default='prefer')
+    if ssl_mode:
+        database_config.setdefault('OPTIONS', {})['sslmode'] = ssl_mode
+
 DATABASES = {
-    'default': env.db('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
+    'default': database_config
 }
 
 # Autenticación
