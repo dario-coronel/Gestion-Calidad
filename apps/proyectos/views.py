@@ -120,7 +120,7 @@ def lista(request):
 
 @login_required
 def crear(request):
-    puede_gestionar = request.user.es_calidad or request.user.is_superuser
+    puede_gestionar = request.user.has_perm('proyectos.add_proyecto')
     if not puede_gestionar:
         messages.error(request, 'Solo el área de Calidad puede crear proyectos.')
         return redirect('proyectos:lista')
@@ -147,7 +147,7 @@ def crear(request):
 @login_required
 def detalle(request, pk):
     proyecto = get_object_or_404(Proyecto.objects.select_related('sector', 'nc', 'om', 'verificacion_eficacia'), pk=pk, eliminado=False)
-    puede_gestionar = request.user.es_calidad or request.user.is_superuser
+    puede_gestionar = request.user.has_perm('proyectos.change_proyecto')
     subtarea_form = SubtareaForm()
 
     if request.method == 'POST':
@@ -164,6 +164,9 @@ def detalle(request, pk):
                 return redirect('proyectos:detalle', pk=pk)
 
         elif accion == 'toggle_subtarea':
+            if not request.user.has_perm('proyectos.change_subtarea'):
+                messages.error(request, 'No tenés permisos para modificar tareas.')
+                return redirect('proyectos:detalle', pk=pk)
             st_id = request.POST.get('subtarea_id')
             try:
                 st = proyecto.subtareas.get(pk=st_id)
@@ -201,7 +204,7 @@ def detalle(request, pk):
 @login_required
 def editar(request, pk):
     proyecto = get_object_or_404(Proyecto, pk=pk, eliminado=False)
-    puede_gestionar = request.user.es_calidad or request.user.is_superuser
+    puede_gestionar = request.user.has_perm('proyectos.change_proyecto')
     if not puede_gestionar:
         messages.error(request, 'No tenés permiso para editar este proyecto.')
         return redirect('proyectos:detalle', pk=pk)

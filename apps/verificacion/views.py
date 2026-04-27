@@ -35,7 +35,7 @@ def lista(request):
 @login_required
 def detalle(request, pk):
     ver = get_object_or_404(VerificacionEficacia, pk=pk, eliminado=False)
-    puede_gestionar = request.user.es_calidad or request.user.is_superuser
+    puede_gestionar = request.user.has_perm('verificacion.change_verificacioneficacia')
     form = VerificacionForm(instance=ver)
 
     if request.method == 'POST' and puede_gestionar:
