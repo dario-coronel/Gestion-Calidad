@@ -1,6 +1,6 @@
 import shutil
 import os
-from datetime import datetime
+import subprocess
 from pathlib import Path
 from django.conf import settings
 from django.utils import timezone
@@ -26,23 +26,56 @@ def ejecutar_backup(tipo='manual', usuario=None):
     )
     
     try:
-        # Obtener ruta de la base de datos SQLite
-        db_path = settings.DATABASES['default']['NAME']
-        
-        if not os.path.exists(db_path):
-            raise FileNotFoundError(f'Base de datos no encontrada: {db_path}')
-        
         # Crear directorio de backups si no existe
         backup_dir = Path(settings.BASE_DIR) / 'backups'
         backup_dir.mkdir(exist_ok=True)
-        
+
         # Generar nombre del archivo con timestamp
         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-        backup_filename = f'sgc_backup_{timestamp}.db'
-        backup_path = backup_dir / backup_filename
-        
-        # Realizar copia
-        shutil.copy2(db_path, backup_path)
+        db_config = settings.DATABASES['default']
+        db_engine = db_config.get('ENGINE', '')
+
+        if db_engine == 'django.db.backends.sqlite3':
+            db_path = db_config.get('NAME')
+
+            if not db_path or not os.path.exists(db_path):
+                raise FileNotFoundError(f'Base de datos no encontrada: {db_path}')
+
+            backup_filename = f'sgc_backup_{timestamp}.sqlite3'
+            backup_path = backup_dir / backup_filename
+            shutil.copy2(db_path, backup_path)
+
+        elif db_engine in ('django.db.backends.postgresql', 'django.db.backends.postgresql_psycopg2'):
+            if shutil.which('pg_dump') is None:
+                raise FileNotFoundError(
+                    'No se encontro pg_dump en el sistema. Instala cliente de PostgreSQL para generar backups.'
+                )
+
+            backup_filename = f'sgc_backup_{timestamp}.sql'
+            backup_path = backup_dir / backup_filename
+
+            env = os.environ.copy()
+            if db_config.get('PASSWORD'):
+                env['PGPASSWORD'] = db_config['PASSWORD']
+            if db_config.get('OPTIONS', {}).get('sslmode'):
+                env['PGSSLMODE'] = db_config['OPTIONS']['sslmode']
+
+            command = [
+                'pg_dump',
+                '-h', db_config.get('HOST') or 'localhost',
+                '-p', str(db_config.get('PORT') or '5432'),
+                '-U', db_config.get('USER') or '',
+                '-d', db_config.get('NAME') or '',
+                '-f', str(backup_path),
+            ]
+
+            result = subprocess.run(command, capture_output=True, text=True, env=env, check=False)
+            if result.returncode != 0:
+                error = result.stderr.strip() or result.stdout.strip() or 'Error desconocido al ejecutar pg_dump'
+                raise RuntimeError(error)
+
+        else:
+            raise NotImplementedError(f'Motor de base de datos no soportado para backup: {db_engine}')
         
         # Obtener tamaño del archivo
         tamaño_bytes = os.path.getsize(backup_path)
@@ -80,7 +113,9 @@ def limpiar_backups_antiguos(dias=30):
     cutoff_time = timezone.now().timestamp() - (dias * 24 * 60 * 60)
     eliminados = 0
     
-    for archivo in backup_dir.glob('*.db'):
+    for archivo in backup_dir.glob('sgc_backup_*'):
+        if not archivo.is_file():
+            continue
         if archivo.stat().st_mtime < cutoff_time:
             try:
                 archivo.unlink()
