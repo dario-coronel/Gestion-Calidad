@@ -5,11 +5,17 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import UsuarioCreateForm, UsuarioUpdateForm
 from .models import Usuario
+from .signals import sincronizar_grupo
 
 
 class SGCLoginView(LoginView):
     template_name = 'accounts/login.html'
     redirect_authenticated_user = True
+
+    def form_valid(self, form):
+        # Mantiene rol y grupo alineados incluso si no se ejecutó seed_grupos.
+        sincronizar_grupo(form.get_user())
+        return super().form_valid(form)
 
 
 class SGCLogoutView(LogoutView):
