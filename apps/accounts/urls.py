@@ -6,6 +6,7 @@ from .views import (
     usuarios_lista,
     usuarios_crear,
     usuarios_editar,
+    roles_lista,
 )
 
 app_name = 'accounts'
@@ -37,6 +38,7 @@ urlpatterns = [
              template_name='accounts/password_reset_complete.html',
          ), name='password_reset_complete'),
     path('usuarios/', usuarios_lista, name='usuarios_lista'),
+    path('roles/', roles_lista, name='roles_lista'),
     path('usuarios/nuevo/', usuarios_crear, name='usuarios_crear'),
     path('usuarios/<int:pk>/editar/', usuarios_editar, name='usuarios_editar'),
 ]
