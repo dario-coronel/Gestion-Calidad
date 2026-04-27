@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Copias de Seguridad — SGC{% endblock %}
+{% block page_title %}Copias de Seguridad{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <p class="text-sm text-gray-500">Gestión y descarga de copias de seguridad de la base de datos.</p>
+  </div>
+  {% if puede_realizar_backup %}
+  <form method="post" action="{% url 'backups:realizar' %}" class="inline">
+    {% csrf_token %}
+    <button type="submit" class="btn-primary">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      Hacer Backup Ahora
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+{# ── INFO ── #}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="card">
+    <h3 class="text-xs uppercase text-gray-400 tracking-wide font-semibold mb-2">Backup Automático</h3>
+    <p class="text-sm text-gray-700">Se ejecuta diariamente a las <strong>02:00 AM</strong></p>
+  </div>
+  <div class="card">
+    <h3 class="text-xs uppercase text-gray-400 tracking-wide font-semibold mb-2">Limpieza Automática</h3>
+    <p class="text-sm text-gray-700">Backups con más de <strong>30 días</strong> se eliminan automáticamente</p>
+  </div>
+  <div class="card">
+    <h3 class="text-xs uppercase text-gray-400 tracking-wide font-semibold mb-2">Almacenamiento</h3>
+    <p class="text-sm text-gray-700">Ubicación: <span class="font-mono text-xs">backups/</span></p>
+  </div>
+</div>
+
+{# ── TABLA DE BACKUPS ── #}
+<div class="card">
+  <h2 class="text-sm font-semibold text-gray-700 mb-4">Historial de Copias de Seguridad</h2>
+  
+  {% if backups %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Fecha y Hora</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Tipo</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Estado</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Tamaño</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Realizado por</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for backup in backups %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-800">{{ backup.fecha_hora|date:"d/m/Y H:i" }}</td>
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium
+              {% if backup.tipo == 'manual' %}bg-blue-50 text-blue-700{% else %}bg-green-50 text-green-700{% endif %}">
+              {% if backup.tipo == 'manual' %}
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M11 5H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-8h-2v8H5V7h6V5z"/><path d="M17 12h-5v5h5v-5z"/></svg>
+              {% else %}
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+              {% endif %}
+              {{ backup.get_tipo_display }}
+            </span>
+          </td>
+          <td class="px-4 py-3">
+            {% if backup.estado == 'exitoso' %}
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-50 text-green-700">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+              {{ backup.get_estado_display }}
+            </span>
+            {% elif backup.estado == 'error' %}
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-50 text-red-700">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+              {{ backup.get_estado_display }}
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-yellow-50 text-yellow-700">
+              <svg class="w-3 h-3 animate-spin" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/></svg>
+              {{ backup.get_estado_display }}
+            </span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if backup.tamaño_mb %}
+            <span class="text-gray-700 font-mono text-xs">{{ backup.tamaño_mb|floatformat:2 }} MB</span>
+            {% else %}
+            <span class="text-gray-400">—</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-gray-700">
+            {% if backup.realizado_por %}
+            {{ backup.realizado_por.get_full_name|default:backup.realizado_por.username }}
+            {% else %}
+            <span class="text-gray-400 text-xs">Sistema</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if backup.estado == 'exitoso' and backup.ruta_archivo %}
+            <a href="{% url 'backups:descargar' backup.pk %}"
+               class="inline-flex items-center gap-1 text-teal-700 hover:underline text-xs font-medium"
+               title="Descargar {{ backup.ruta_archivo|default:'backup' }}">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Descargar
+            </a>
+            {% elif backup.estado == 'error' %}
+            <button type="button" class="text-red-700 text-xs font-medium" onclick="alert('{{ backup.mensaje_error|escapejs }}')">
+              Ver error
+            </button>
+            {% else %}
+            <span class="text-gray-400 text-xs">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-12">
+    <svg class="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <p class="text-gray-400 text-sm">No hay backups registrados aún.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
