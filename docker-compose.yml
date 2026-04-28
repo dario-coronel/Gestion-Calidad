@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:14
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=calidad_db
+      - POSTGRES_USER=usuario_calidad
+      - POSTGRES_PASSWORD=tu_password_seguro
+    restart: always
+
+  web:
+    build: .
+    command: gunicorn --bind 0.0.0.0:8002 sgc.wsgi:application
+    volumes:
+      - .:/app
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgres://usuario_calidad:tu_password_seguro@db:5432/calidad_db
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  postgres_data:

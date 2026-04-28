@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}SGC — Gestión de Calidad{% endblock %}</title>
 
-  <!-- Tailwind CSS (CDN dev — reemplazar por build en producción) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -24,10 +23,8 @@
     }
   </script>
 
-  <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
   {% block extra_head %}{% endblock %}
@@ -56,7 +53,7 @@
 
       <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Gestión</p>
 
-      {% if request.user.has_perm('nc.view_noconformidad') or request.user.has_perm('nc.add_noconformidad') %}
+      {% if perms.nc.view_noconformidad or perms.nc.add_noconformidad %}
       <a href="{% url 'nc:lista' %}"
          class="nav-link {% if active_app == 'nc' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
@@ -64,7 +61,7 @@
       </a>
       {% endif %}
 
-      {% if request.user.has_perm('qr.view_quejareclamo') or request.user.has_perm('qr.add_quejareclamo') %}
+      {% if perms.qr.view_quejareclamo or perms.qr.add_quejareclamo %}
       <a href="{% url 'qr:lista' %}"
          class="nav-link {% if active_app == 'qr' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"/></svg>
@@ -72,7 +69,7 @@
       </a>
       {% endif %}
 
-      {% if request.user.has_perm('om.view_oportunidadmejora') or request.user.has_perm('om.add_oportunidadmejora') %}
+      {% if perms.om.view_oportunidadmejora or perms.om.add_oportunidadmejora %}
       <a href="{% url 'om:lista' %}"
          class="nav-link {% if active_app == 'om' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
@@ -80,11 +77,11 @@
       </a>
       {% endif %}
 
-      {% if request.user.has_perm('proyectos.view_proyecto') or request.user.has_perm('proyectos.add_proyecto') or request.user.has_perm('verificacion.view_verificacioneficacia') %}
+      {% if perms.proyectos.view_proyecto or perms.proyectos.add_proyecto or perms.verificacion.view_verificacioneficacia %}
       <p class="px-3 pt-4 pb-1 text-xs text-white/30 uppercase tracking-widest font-semibold">Proyectos</p>
       {% endif %}
 
-      {% if request.user.has_perm('proyectos.view_proyecto') or request.user.has_perm('proyectos.add_proyecto') %}
+      {% if perms.proyectos.view_proyecto or perms.proyectos.add_proyecto %}
       <a href="{% url 'proyectos:lista' %}"
          class="nav-link {% if active_app == 'proyectos' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
@@ -92,7 +89,7 @@
       </a>
       {% endif %}
 
-      {% if request.user.has_perm('verificacion.view_verificacioneficacia') %}
+      {% if perms.verificacion.view_verificacioneficacia %}
       <a href="{% url 'verificacion:lista' %}"
          class="nav-link {% if active_app == 'verificacion' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
