@@ -18,6 +18,7 @@ dist/
 .DS_Store
 Thumbs.db
 .vscode/
+Calidad.code-workspace
 
 # Django
 .env
