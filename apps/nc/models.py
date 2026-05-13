@@ -1,5 +1,6 @@
 ﻿from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 from apps.core.models import ModeloBase, Sector
 from django.conf import settings
 
@@ -44,6 +45,16 @@ class EficaciaNC(models.TextChoices):
     PENDIENTE = 'pendiente', 'Pendiente de evaluación'
     EFICAZ = 'eficaz', 'Eficaz'
     NO_EFICAZ = 'no_eficaz', 'No Eficaz'
+
+
+class RangoReevaluacionNC(models.IntegerChoices):
+    D30 = 30, '30 dias'
+    D60 = 60, '60 dias'
+    D90 = 90, '90 dias'
+    D120 = 120, '120 dias'
+    D150 = 150, '150 dias'
+    D180 = 180, '180 dias'
+    D360 = 360, '360 dias'
 
 
 class NoConformidad(ModeloBase):
@@ -121,6 +132,28 @@ class NoConformidad(ModeloBase):
         help_text='Descripción de la evidencia que demuestra la implementación de la corrección'
     )
 
+    # Seguimiento de cierre y reevaluación
+    dias_cierre = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name='Cantidad de dias de cierre'
+    )
+    fecha_implementacion_accion = models.DateField(
+        null=True, blank=True,
+        verbose_name='Fecha de implementación de acción correctiva'
+    )
+    responsable_accion = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='nc_responsable_accion',
+        verbose_name='Responsable de la acción'
+    )
+    rango_dias_reevaluacion = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        choices=RangoReevaluacionNC.choices,
+        verbose_name='Rango de dias para reevaluación'
+    )
+
     # Eficacia de la acción correctiva (evaluada por Calidad)
     eficacia = models.CharField(
         max_length=10, choices=EficaciaNC, default=EficaciaNC.PENDIENTE,
@@ -145,6 +178,12 @@ class NoConformidad(ModeloBase):
             return self.probabilidad * self.impacto
         return None
 
+    @property
+    def fecha_reevaluacion(self):
+        if self.fecha_implementacion_accion and self.rango_dias_reevaluacion:
+            return self.fecha_implementacion_accion + timedelta(days=self.rango_dias_reevaluacion)
+        return None
+
     def save(self, *args, **kwargs):
         if not self.folio:
             anio = self.fecha.year if self.fecha else timezone.now().year
@@ -153,6 +192,33 @@ class NoConformidad(ModeloBase):
             ).count()
             self.folio = f'NC-{anio}-{str(ultimo + 1).zfill(4)}'
         super().save(*args, **kwargs)
+
+
+class CausaRaizIdentificada(ModeloBase):
+    """Catálogo de causas raíz identificadas para los 5 Porqués."""
+    nombre = models.CharField(
+        max_length=255, unique=True,
+        verbose_name='Nombre de la causa raíz',
+        help_text='Ej: Error de calibración, Falta de capacitación, Desgaste de equipamiento'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Detalle de qué abarca esta causa raíz'
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Marcar inactivo para dejar de usarla sin eliminarla'
+    )
+
+    class Meta:
+        verbose_name = 'Causa Raíz Identificada'
+        verbose_name_plural = 'Causas Raíz Identificadas'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
 
 
 class CincoPorques(ModeloBase):

@@ -83,6 +83,11 @@
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Prioridad</dt><dd>{{ nc.get_prioridad_display }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Origen</dt><dd>{{ nc.get_origen_display }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Eficacia</dt><dd class="font-medium {% if nc.eficacia == 'eficaz' %}text-success{% elif nc.eficacia == 'no_eficaz' %}text-danger{% else %}text-gray-500{% endif %}">{{ nc.get_eficacia_display }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Dias de cierre</dt><dd>{{ nc.dias_cierre|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Fecha implementación</dt><dd>{% if nc.fecha_implementacion_accion %}{{ nc.fecha_implementacion_accion|date:"d/m/Y" }}{% else %}—{% endif %}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Responsable acción</dt><dd>{% if nc.responsable_accion %}{{ nc.responsable_accion.get_full_name|default:nc.responsable_accion.username }}{% else %}—{% endif %}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Rango reevaluación</dt><dd>{% if nc.rango_dias_reevaluacion %}{{ nc.rango_dias_reevaluacion }} dias{% else %}—{% endif %}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Fecha reevaluación</dt><dd>{% if nc.fecha_reevaluacion %}{{ nc.fecha_reevaluacion|date:"d/m/Y" }}{% else %}—{% endif %}</dd></div>
         {% if qr_relacionada %}<div class="col-span-2"><dt class="text-gray-400 text-xs uppercase tracking-wide">QyR asociada</dt><dd><a href="{% url 'qr:detalle' qr_relacionada.pk %}" class="text-primary hover:underline">{{ qr_relacionada.folio }}</a></dd></div>{% endif %}
         {% if om_relacionada %}<div class="col-span-2"><dt class="text-gray-400 text-xs uppercase tracking-wide">OM asociada</dt><dd><a href="{% url 'om:detalle' om_relacionada.pk %}" class="text-primary hover:underline">{{ om_relacionada.folio }}</a></dd></div>{% endif %}
         {% if nc_origen_relacionada %}<div class="col-span-2"><dt class="text-gray-400 text-xs uppercase tracking-wide">NC origen (No Eficaz)</dt><dd><a href="{% url 'nc:detalle' nc_origen_relacionada.pk %}" class="text-orange-600 hover:underline">{{ nc_origen_relacionada.folio }}</a></dd></div>{% endif %}
@@ -142,7 +147,14 @@
 
           <div class="pt-2 border-t border-dashed border-gray-200">
             <label class="form-label font-semibold text-gray-700">Causa Raíz identificada</label>
-            {{ cinco_form.causa_raiz }}
+            {{ cinco_form.causa_raiz_select }}
+            {% if cinco_form.causa_raiz_select.errors %}
+              <ul class="mt-1 text-xs text-red-600">
+                {% for error in cinco_form.causa_raiz_select.errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
           </div>
 
           <div>

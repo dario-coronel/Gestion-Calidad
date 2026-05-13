@@ -1,5 +1,5 @@
 from django import forms
-from .models import NoConformidad, CincoPorques, AdjuntoNC, OrigenNC, EficaciaNC
+from .models import NoConformidad, CincoPorques, AdjuntoNC, OrigenNC, EficaciaNC, CausaRaizIdentificada
 
 
 class NoConformidadForm(forms.ModelForm):
@@ -18,6 +18,8 @@ class NoConformidadForm(forms.ModelForm):
             'notificar_cliente', 'email_cliente',
             # Evidencia
             'evidencia',
+            # Seguimiento de cierre y reevaluación
+            'dias_cierre', 'fecha_implementacion_accion', 'responsable_accion', 'rango_dias_reevaluacion',
         ]
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
@@ -48,6 +50,10 @@ class NoConformidadForm(forms.ModelForm):
                 'class': 'form-input', 'rows': 3,
                 'placeholder': 'Describí la evidencia que demuestra la implementación...'
             }),
+            'dias_cierre': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': 'Ej: 15'}),
+            'fecha_implementacion_accion': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'responsable_accion': forms.Select(attrs={'class': 'form-input'}),
+            'rango_dias_reevaluacion': forms.Select(attrs={'class': 'form-input'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -61,6 +67,8 @@ class NoConformidadForm(forms.ModelForm):
         self.fields['sector'].required = False
         self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
+        self.fields['responsable_accion'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
+        self.fields['responsable_accion'].empty_label = 'Seleccionar responsable de la acción...'
         self.fields['origen'].required = False
         self.fields['origen'].initial = OrigenNC.DIRECTO
         self.fields['qr_relacionada'].queryset = QuejaReclamo.objects.filter(eliminado=False).order_by('-fecha')
@@ -79,6 +87,8 @@ class NoConformidadForm(forms.ModelForm):
         tipo_contam = cleaned.get('tipo_contaminacion')
         notificar = cleaned.get('notificar_cliente')
         email = cleaned.get('email_cliente')
+        fecha_impl = cleaned.get('fecha_implementacion_accion')
+        rango = cleaned.get('rango_dias_reevaluacion')
 
         if origen == OrigenNC.QR and not qr:
             self.add_error('qr_relacionada', 'Seleccioná la QyR asociada cuando el origen es Queja/Reclamo.')
@@ -88,6 +98,10 @@ class NoConformidadForm(forms.ModelForm):
             self.add_error('tipo_contaminacion', 'Seleccioná el tipo de contaminación cruzada.')
         if notificar and not email:
             self.add_error('email_cliente', 'Ingresá el e-mail del cliente para enviar la notificación.')
+        if rango and not fecha_impl:
+            self.add_error('fecha_implementacion_accion', 'Ingresá la fecha de implementación para calcular la reevaluación.')
+        if fecha_impl and not rango:
+            self.add_error('rango_dias_reevaluacion', 'Seleccioná el rango de dias para programar la reevaluación.')
         return cleaned
 
 
@@ -109,6 +123,14 @@ class MatrizRiesgoForm(forms.ModelForm):
 
 
 class CincoPorquesForm(forms.ModelForm):
+    causa_raiz_select = forms.ModelChoiceField(
+        queryset=CausaRaizIdentificada.objects.filter(activo=True).order_by('nombre'),
+        required=False,
+        label='Causa raíz identificada (Why 5)',
+        widget=forms.Select(attrs={'class': 'form-input'}),
+        help_text='Selecciona una causa raíz del catálogo'
+    )
+
     class Meta:
         model = CincoPorques
         fields = ['etapa_1', 'etapa_2', 'etapa_3', 'etapa_4', 'etapa_5', 'causa_raiz', 'accion_correctiva']
@@ -118,7 +140,7 @@ class CincoPorquesForm(forms.ModelForm):
             'etapa_3': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': '¿Por qué? (Why 2)'}),
             'etapa_4': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': '¿Por qué? (Why 3)'}),
             'etapa_5': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': '¿Por qué? (Why 4)'}),
-            'causa_raiz': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': 'Causa raíz identificada (Why 5)'}),
+            'causa_raiz': forms.HiddenInput(),  # Campo oculto, usamos causa_raiz_select en su lugar
             'accion_correctiva': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Acción correctiva propuesta...'}),
         }
 
@@ -128,6 +150,30 @@ class CincoPorquesForm(forms.ModelForm):
         # Defensa ante plantillas/caché que hayan dejado atributos bloqueantes.
         self.fields['etapa_1'].widget.attrs.pop('readonly', None)
         self.fields['etapa_1'].widget.attrs.pop('disabled', None)
+        
+        # Si hay una instancia con causa_raiz, intentar pre-seleccionar en el dropdown
+        if self.instance and self.instance.pk:
+            causa_raiz_text = self.instance.causa_raiz
+            if causa_raiz_text:
+                try:
+                    # Intentar encontrar el CausaRaizIdentificada que coincida
+                    causa_obj = CausaRaizIdentificada.objects.filter(nombre__iexact=causa_raiz_text.strip()).first()
+                    if causa_obj:
+                        self.fields['causa_raiz_select'].initial = causa_obj.id
+                except:
+                    pass
+
+    def clean(self):
+        cleaned_data = super().clean()
+        causa_raiz_select = cleaned_data.get('causa_raiz_select')
+        
+        # Si se seleccionó una causa raíz del dropdown, guardar su nombre en el campo causa_raiz
+        if causa_raiz_select:
+            cleaned_data['causa_raiz'] = causa_raiz_select.nombre
+        else:
+            cleaned_data['causa_raiz'] = ''
+        
+        return cleaned_data
 
 
 class EficaciaForm(forms.ModelForm):
