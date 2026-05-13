@@ -158,7 +158,7 @@ class NoConformidad(ModeloBase):
 class CincoPorques(ModeloBase):
     """Análisis de causa raíz 5 Porqués, exclusivo de No Conformidades."""
     nc = models.OneToOneField(NoConformidad, on_delete=models.CASCADE, related_name='cinco_porques')
-    etapa_1 = models.TextField(help_text='Problema detectado (se pre-carga desde la NC)')
+    etapa_1 = models.TextField(blank=True, help_text='Problema detectado (se pre-carga desde la NC)')
     etapa_2 = models.TextField(blank=True, help_text='¿Por qué? (Why 1)')
     etapa_3 = models.TextField(blank=True, help_text='¿Por qué? (Why 2)')
     etapa_4 = models.TextField(blank=True, help_text='¿Por qué? (Why 3)')

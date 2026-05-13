@@ -1,5 +1,7 @@
 ﻿from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.http import HttpResponse
@@ -30,6 +32,14 @@ def _color_riesgo(valor):
     if valor >= 8:
         return 'text-warning font-semibold'
     return 'text-success'
+
+
+def _es_admin_sistema(user):
+    return user.is_authenticated and (getattr(user, 'es_admin', False) or user.is_superuser or user.is_staff)
+
+
+def _puede_gestionar_nc(user):
+    return user.has_perm('nc.change_noconformidad') or _es_admin_sistema(user)
 
 
 # ── lista ─────────────────────────────────────────────────────────────────────
@@ -84,13 +94,13 @@ def crear(request):
         if form.is_valid():
             nc = form.save(commit=False)
             # Lo cargado por operario entra al circuito de revisión de Calidad.
-            if not request.user.has_perm('nc.change_noconformidad'):
+            if not _puede_gestionar_nc(request.user):
                 nc.estado = EstadoNC.EN_REVISION
             nc.creado_por = request.user
             nc.actualizado_por = request.user
             nc.save()
-            # Crear 5 Porqués asociados con etapa 1 pre-cargada
-            CincoPorques.objects.create(nc=nc, etapa_1=nc.descripcion)
+            # Crear 5 Porqués asociados con el 1er por qué en blanco.
+            CincoPorques.objects.create(nc=nc)
             # Adjunto opcional
             if adjunto_form.is_valid() and request.FILES.get('archivo'):
                 adj = adjunto_form.save(commit=False)
@@ -117,17 +127,30 @@ def crear(request):
 @login_required
 def detalle(request, pk):
     nc = get_object_or_404(NoConformidad, pk=pk, eliminado=False)
-    cinco_p = getattr(nc, 'cinco_porques', None)
-    # Auto-crear 5 Porqués si no existe (NCs importadas, seed, migradas, etc.)
-    if cinco_p is None and request.user.has_perm('nc.change_noconformidad'):
-        cinco_p = CincoPorques.objects.create(nc=nc, etapa_1=nc.descripcion)
-    cinco_form = None
-    matriz_form = None
-    puede_calidad = request.user.has_perm('nc.change_noconformidad')
+    puede_calidad = _puede_gestionar_nc(request.user)
     puede_editar = (
         puede_calidad
         or (request.user.has_perm('nc.add_noconformidad') and nc.responsable_id == request.user.id and nc.estado == EstadoNC.BORRADOR)
     )
+    cinco_p = getattr(nc, 'cinco_porques', None)
+    # Auto-crear 5 Porqués si no existe (NCs importadas, seed, migradas, etc.)
+    if cinco_p is None and puede_editar:
+        cinco_p = CincoPorques.objects.create(nc=nc)
+    # Normaliza registros legacy: limpia etapa_1 si solo fue auto-copiada desde descripción.
+    if (
+        cinco_p
+        and cinco_p.etapa_1 == nc.descripcion
+        and not cinco_p.etapa_2
+        and not cinco_p.etapa_3
+        and not cinco_p.etapa_4
+        and not cinco_p.etapa_5
+        and not cinco_p.causa_raiz
+        and not cinco_p.accion_correctiva
+    ):
+        cinco_p.etapa_1 = ''
+        cinco_p.save(update_fields=['etapa_1', 'actualizado_en'])
+    cinco_form = None
+    matriz_form = None
 
     if request.method == 'POST':
         accion = request.POST.get('accion', '')
@@ -210,7 +233,7 @@ def detalle(request, pk):
                         creado_por=request.user,
                         actualizado_por=request.user,
                     )
-                    CincoPorques.objects.create(nc=nueva_nc, etapa_1=nueva_nc.descripcion)
+                    CincoPorques.objects.create(nc=nueva_nc)
                     messages.warning(
                         request,
                         f'NC marcada como No Eficaz. Se generó la nueva NC {nueva_nc.folio} para seguimiento.'
@@ -222,11 +245,12 @@ def detalle(request, pk):
                     messages.success(request, f'Eficacia actualizada: {nc_guardada.get_eficacia_display()}')
                     return redirect('nc:detalle', pk=pk)
 
-    # Solo mostrar form editable a calidad/admin
+    # Mostrar form editable solo a calidad/admin
     eficacia_form = None
     if puede_calidad:
         if not cinco_form and cinco_p:
             cinco_form = CincoPorquesForm(instance=cinco_p)
+    if puede_calidad:
         if not matriz_form:
             matriz_form = MatrizRiesgoForm(instance=nc)
         eficacia_form = EficaciaForm(instance=nc)
@@ -238,6 +262,22 @@ def detalle(request, pk):
         ('etapa_4', '¿Por qué? (4º nivel)'),
         ('etapa_5', '¿Por qué? (5º nivel)'),
     ]
+
+    qr_relacionada = None
+    om_relacionada = None
+    nc_origen_relacionada = None
+    try:
+        qr_relacionada = nc.qr_relacionada
+    except (ObjectDoesNotExist, DatabaseError):
+        qr_relacionada = None
+    try:
+        om_relacionada = nc.om_relacionada
+    except (ObjectDoesNotExist, DatabaseError):
+        om_relacionada = None
+    try:
+        nc_origen_relacionada = nc.nc_origen
+    except (ObjectDoesNotExist, DatabaseError):
+        nc_origen_relacionada = None
 
     return render(request, 'nc/detalle.html', {
         'nc': nc,
@@ -253,6 +293,9 @@ def detalle(request, pk):
         'puede_editar_riesgo': puede_calidad,
         'puede_cambiar_estado': puede_calidad,
         'puede_editar': puede_editar,
+        'qr_relacionada': qr_relacionada,
+        'om_relacionada': om_relacionada,
+        'nc_origen_relacionada': nc_origen_relacionada,
     })
 
 
@@ -262,7 +305,7 @@ def detalle(request, pk):
 def editar(request, pk):
     nc = get_object_or_404(NoConformidad, pk=pk, eliminado=False)
     puede_editar = (
-        request.user.has_perm('nc.change_noconformidad')
+        _puede_gestionar_nc(request.user)
         or (request.user.has_perm('nc.add_noconformidad') and nc.responsable_id == request.user.id and nc.estado == EstadoNC.BORRADOR)
     )
     if not puede_editar:
@@ -274,7 +317,7 @@ def editar(request, pk):
         if form.is_valid():
             nc = form.save(commit=False)
             # Si el operario corrige una NC devuelta, vuelve a revisión.
-            if not request.user.has_perm('nc.change_noconformidad'):
+            if not _puede_gestionar_nc(request.user):
                 nc.estado = EstadoNC.EN_REVISION
             nc.actualizado_por = request.user
             nc.save()

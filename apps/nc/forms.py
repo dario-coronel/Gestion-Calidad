@@ -113,7 +113,7 @@ class CincoPorquesForm(forms.ModelForm):
         model = CincoPorques
         fields = ['etapa_1', 'etapa_2', 'etapa_3', 'etapa_4', 'etapa_5', 'causa_raiz', 'accion_correctiva']
         widgets = {
-            'etapa_1': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'readonly': True}),
+            'etapa_1': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': '¿Por qué? (Why 1)'}),
             'etapa_2': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': '¿Por qué? (Why 1)'}),
             'etapa_3': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': '¿Por qué? (Why 2)'}),
             'etapa_4': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': '¿Por qué? (Why 3)'}),
@@ -121,6 +121,13 @@ class CincoPorquesForm(forms.ModelForm):
             'causa_raiz': forms.Textarea(attrs={'class': 'form-input', 'rows': 2, 'placeholder': 'Causa raíz identificada (Why 5)'}),
             'accion_correctiva': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Acción correctiva propuesta...'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['etapa_1'].required = False
+        # Defensa ante plantillas/caché que hayan dejado atributos bloqueantes.
+        self.fields['etapa_1'].widget.attrs.pop('readonly', None)
+        self.fields['etapa_1'].widget.attrs.pop('disabled', None)
 
 
 class EficaciaForm(forms.ModelForm):
