@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+  <div class="rounded-lg border border-danger/20 bg-danger/5 p-6 shadow">
+    <div class="flex items-center gap-4">
+      <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-danger/10">
+        <svg class="h-6 w-6 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4v2m0 4v2m0-14a9 9 0 110 18 9 9 0 010-18z"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900">Confirmar eliminación</h3>
+        <p class="mt-1 text-sm text-gray-600">
+          ¿Estás seguro de que deseas eliminar la Causa Raíz <strong>"{{ causa.nombre }}"</strong>?
+        </p>
+        <p class="mt-2 text-xs text-gray-500">Esta acción no se puede deshacer.</p>
+      </div>
+    </div>
+
+    <div class="mt-6 flex gap-3">
+      <form method="post" class="flex-1">
+        {% csrf_token %}
+        <button type="submit" class="w-full btn btn-danger">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Sí, Eliminar
+        </button>
+      </form>
+      <a href="{% url 'nc:causa_raiz_detalle' causa.pk %}" class="flex-1 btn btn-secondary">
+        Cancelar
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

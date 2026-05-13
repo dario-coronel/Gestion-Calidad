@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+  {# ── Header ──────────────────────────────────────────────────────────── #}
+  <div>
+    <h1 class="text-3xl font-black text-gray-900">{{ title }}</h1>
+    <p class="mt-1 text-sm text-gray-600">
+      {% if is_create %}
+        Agrega una nueva causa raíz al catálogo
+      {% else %}
+        Actualiza los datos de la causa raíz
+      {% endif %}
+    </p>
+  </div>
+
+  {# ── Form ────────────────────────────────────────────────────────────── #}
+  <div class="rounded-lg border border-gray-200 bg-white p-6 shadow">
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      {# ── Nombre ──────────────────────────────────────────────────────── #}
+      <div>
+        <label for="id_nombre" class="form-label">Nombre *</label>
+        <input type="text" id="id_nombre" name="nombre" value="{{ nombre|default:'' }}" 
+               class="form-input" placeholder="Ej: Error de calibración" required>
+        <p class="mt-1 text-xs text-gray-600">Nombre único para identificar esta causa raíz</p>
+      </div>
+
+      {# ── Descripción ─────────────────────────────────────────────────── #}
+      <div>
+        <label for="id_descripcion" class="form-label">Descripción</label>
+        <textarea id="id_descripcion" name="descripcion" class="form-input" rows="5" 
+                  placeholder="Detalla qué abarca esta causa raíz...">{{ descripcion|default:'' }}</textarea>
+        <p class="mt-1 text-xs text-gray-600">Información adicional sobre esta causa raíz</p>
+      </div>
+
+      {# ── Botones ─────────────────────────────────────────────────────── #}
+      <div class="flex gap-3 pt-4">
+        <button type="submit" class="btn-primary">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          {% if is_create %}Crear Causa Raíz{% else %}Guardar Cambios{% endif %}
+        </button>
+        <a href="{% url 'nc:causa_raiz_lista' %}" class="btn btn-secondary">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

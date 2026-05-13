@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 
-from .models import NoConformidad, CincoPorques, EstadoNC, EficaciaNC
+from .models import NoConformidad, CincoPorques, EstadoNC, EficaciaNC, CausaRaizIdentificada
 from .forms import NoConformidadForm, CincoPorquesForm, MatrizRiesgoForm, AdjuntoNCForm, EficaciaForm
 from apps.core.models import Sector
 
@@ -375,4 +375,168 @@ def pdf_completo(request, pk):
     except Exception as exc:
         messages.error(request, f'Error al generar PDF: {exc}')
         return redirect('nc:detalle', pk=pk)
+
+
+# ── Causa Raíz Identificada CRUD ──────────────────────────────────────────────
+
+def _puede_gestionar_causa_raiz(user):
+    """Verifica si el usuario puede gestionar Causa Raíz Identificada (admin/calidad)."""
+    if not user.is_authenticated:
+        return False
+    if user.es_admin or user.is_superuser or user.is_staff:
+        return True
+    from apps.accounts.models import Rol
+    return user.rol == Rol.CALIDAD
+
+
+@login_required
+def causa_raiz_lista(request):
+    """Lista de Causas Raíz Identificadas."""
+    if not _puede_gestionar_causa_raiz(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+    
+    qs = CausaRaizIdentificada.objects.filter(eliminado=False).order_by('nombre')
+    
+    context = {
+        'title': 'Causas Raíz Identificadas',
+        'causas_raiz': qs,
+        'total': qs.count(),
+    }
+    return render(request, 'nc/causa_raiz_lista.html', context)
+
+
+@login_required
+def causa_raiz_crear(request):
+    """Crear nueva Causa Raíz Identificada."""
+    if not _puede_gestionar_causa_raiz(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+    
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        
+        if not nombre:
+            messages.error(request, 'El nombre es obligatorio.')
+            return render(request, 'nc/causa_raiz_form.html', {
+                'title': 'Nueva Causa Raíz Identificada',
+                'is_create': True,
+            })
+        
+        # Verificar si ya existe
+        if CausaRaizIdentificada.objects.filter(nombre__iexact=nombre, eliminado=False).exists():
+            messages.error(request, f'Ya existe una Causa Raíz con el nombre "{nombre}".')
+            return render(request, 'nc/causa_raiz_form.html', {
+                'title': 'Nueva Causa Raíz Identificada',
+                'is_create': True,
+                'nombre': nombre,
+                'descripcion': descripcion,
+            })
+        
+        causa = CausaRaizIdentificada.objects.create(
+            nombre=nombre,
+            descripcion=descripcion,
+            creado_por=request.user,
+            actualizado_por=request.user,
+        )
+        messages.success(request, f'Causa Raíz "{nombre}" creada exitosamente.')
+        return redirect('nc:causa_raiz_detalle', pk=causa.pk)
+    
+    return render(request, 'nc/causa_raiz_form.html', {
+        'title': 'Nueva Causa Raíz Identificada',
+        'is_create': True,
+    })
+
+
+@login_required
+def causa_raiz_detalle(request, pk):
+    """Detalle de una Causa Raíz Identificada."""
+    if not _puede_gestionar_causa_raiz(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+    
+    causa = get_object_or_404(CausaRaizIdentificada, pk=pk, eliminado=False)
+    
+    context = {
+        'title': f'Causa Raíz: {causa.nombre}',
+        'causa': causa,
+    }
+    return render(request, 'nc/causa_raiz_detalle.html', context)
+
+
+@login_required
+def causa_raiz_editar(request, pk):
+    """Editar una Causa Raíz Identificada."""
+    if not _puede_gestionar_causa_raiz(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+    
+    causa = get_object_or_404(CausaRaizIdentificada, pk=pk, eliminado=False)
+    
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        
+        if not nombre:
+            messages.error(request, 'El nombre es obligatorio.')
+            return render(request, 'nc/causa_raiz_form.html', {
+                'title': f'Editar Causa Raíz: {causa.nombre}',
+                'causa': causa,
+                'nombre': nombre,
+                'descripcion': descripcion,
+            })
+        
+        # Verificar si existe otro con el mismo nombre
+        if CausaRaizIdentificada.objects.filter(
+            nombre__iexact=nombre, eliminado=False
+        ).exclude(pk=pk).exists():
+            messages.error(request, f'Ya existe otra Causa Raíz con el nombre "{nombre}".')
+            return render(request, 'nc/causa_raiz_form.html', {
+                'title': f'Editar Causa Raíz: {causa.nombre}',
+                'causa': causa,
+                'nombre': nombre,
+                'descripcion': descripcion,
+            })
+        
+        causa.nombre = nombre
+        causa.descripcion = descripcion
+        causa.actualizado_por = request.user
+        causa.save()
+        
+        messages.success(request, f'Causa Raíz "{nombre}" actualizada exitosamente.')
+        return redirect('nc:causa_raiz_detalle', pk=causa.pk)
+    
+    context = {
+        'title': f'Editar Causa Raíz: {causa.nombre}',
+        'causa': causa,
+        'nombre': causa.nombre,
+        'descripcion': causa.descripcion,
+    }
+    return render(request, 'nc/causa_raiz_form.html', context)
+
+
+@login_required
+def causa_raiz_eliminar(request, pk):
+    """Eliminar (lógico) una Causa Raíz Identificada."""
+    if not _puede_gestionar_causa_raiz(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+    
+    causa = get_object_or_404(CausaRaizIdentificada, pk=pk, eliminado=False)
+    
+    if request.method == 'POST':
+        nombre = causa.nombre
+        causa.eliminado = True
+        causa.actualizado_por = request.user
+        causa.save()
+        
+        messages.success(request, f'Causa Raíz "{nombre}" eliminada exitosamente.')
+        return redirect('nc:causa_raiz_lista')
+    
+    context = {
+        'title': f'Eliminar Causa Raíz: {causa.nombre}',
+        'causa': causa,
+    }
+    return render(request, 'nc/causa_raiz_confirmar_eliminar.html', context)
 

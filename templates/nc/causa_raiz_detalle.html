@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+  {# ── Header ──────────────────────────────────────────────────────────── #}
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-black text-gray-900">{{ causa.nombre }}</h1>
+      <p class="mt-1 text-sm text-gray-600">Creado el {{ causa.creado_en|date:"d/m/Y H:i" }}</p>
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'nc:causa_raiz_editar' causa.pk %}" class="btn-primary text-sm">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Editar
+      </a>
+      <a href="{% url 'nc:causa_raiz_lista' %}" class="btn btn-secondary text-sm">
+        Volver
+      </a>
+    </div>
+  </div>
+
+  {# ── Tarjeta de Detalles ─────────────────────────────────────────────── #}
+  <div class="rounded-lg border border-gray-200 bg-white p-6 shadow">
+    <div class="grid grid-cols-2 gap-6">
+      {# ── Estado ────────────────────────────────────────────────────────── #}
+      <div>
+        <p class="text-xs font-semibold uppercase text-gray-500">Estado</p>
+        <div class="mt-2">
+          {% if causa.activo %}
+            <span class="inline-flex items-center rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">Activo</span>
+          {% else %}
+            <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">Inactivo</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Creado por ────────────────────────────────────────────────────── #}
+      <div>
+        <p class="text-xs font-semibold uppercase text-gray-500">Creado por</p>
+        <p class="mt-2 text-sm text-gray-900">{{ causa.creado_por.get_full_name|default:causa.creado_por.username }}</p>
+      </div>
+
+      {# ── Descripción ─────────────────────────────────────────────────── #}
+      <div class="col-span-2">
+        <p class="text-xs font-semibold uppercase text-gray-500">Descripción</p>
+        <p class="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+          {{ causa.descripcion|default:"Sin descripción" }}
+        </p>
+      </div>
+
+      {# ── Última actualización ──────────────────────────────────────────── #}
+      <div class="col-span-2 border-t border-gray-200 pt-4">
+        <p class="text-xs text-gray-500">
+          Última actualización: {{ causa.actualizado_en|date:"d/m/Y H:i" }} 
+          por {{ causa.actualizado_por.get_full_name|default:causa.actualizado_por.username }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# ── Botón Eliminar ──────────────────────────────────────────────────── #}
+  <div class="flex justify-end">
+    <a href="{% url 'nc:causa_raiz_eliminar' causa.pk %}" class="btn btn-danger text-sm">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      Eliminar
+    </a>
+  </div>
+</div>
+{% endblock %}
