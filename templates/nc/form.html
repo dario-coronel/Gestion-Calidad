@@ -67,6 +67,20 @@
         </div>
       </div>
 
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="form-label">Norma <span class="text-danger">*</span></label>
+          {{ form.norma }}
+          {% if form.norma.errors %}<p class="mt-1 text-xs text-danger">{{ form.norma.errors|join:", " }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="form-label">Punto de la norma <span class="text-danger">*</span></label>
+          {{ form.punto_norma }}
+          {% if form.punto_norma.errors %}<p class="mt-1 text-xs text-danger">{{ form.punto_norma.errors|join:", " }}</p>{% endif %}
+        </div>
+      </div>
+
       <div class="mt-4">
         <label class="form-label">Descripción del problema <span class="text-danger">*</span></label>
         {{ form.descripcion }}
@@ -163,6 +177,36 @@
         </div>
       </div>
 
+      {# ── SECCIÓN 7: Cierre y Reevaluación ── #}
+      <div class="mt-6 pt-4 border-t border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Cierre y Reevaluación</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Cantidad de dias de cierre</label>
+            {{ form.dias_cierre }}
+            {% if form.dias_cierre.errors %}<p class="mt-1 text-xs text-danger">{{ form.dias_cierre.errors|join:", " }}</p>{% endif %}
+          </div>
+
+          <div>
+            <label class="form-label">Fecha implementación acción correctiva</label>
+            {{ form.fecha_implementacion_accion }}
+            {% if form.fecha_implementacion_accion.errors %}<p class="mt-1 text-xs text-danger">{{ form.fecha_implementacion_accion.errors|join:", " }}</p>{% endif %}
+          </div>
+
+          <div>
+            <label class="form-label">Responsable de la acción</label>
+            {{ form.responsable_accion }}
+            {% if form.responsable_accion.errors %}<p class="mt-1 text-xs text-danger">{{ form.responsable_accion.errors|join:", " }}</p>{% endif %}
+          </div>
+
+          <div>
+            <label class="form-label">Rango de dias para reevaluación</label>
+            {{ form.rango_dias_reevaluacion }}
+            {% if form.rango_dias_reevaluacion.errors %}<p class="mt-1 text-xs text-danger">{{ form.rango_dias_reevaluacion.errors|join:", " }}</p>{% endif %}
+          </div>
+        </div>
+      </div>
+
       {# Errores generales #}
       {% if form.non_field_errors %}
       <div class="mt-4 px-4 py-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">
@@ -182,6 +226,53 @@
 
 <script>
 (function () {
+  // ── Norma → Punto de norma ─────────────────────────────
+  var normaSel = document.getElementById('id_norma');
+  var puntoSel = document.getElementById('id_punto_norma');
+  var initialPunto = puntoSel ? puntoSel.value : '';
+
+  function renderPuntos(items, selectedId) {
+    if (!puntoSel) return;
+    puntoSel.innerHTML = '';
+
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Seleccionar punto de la norma...';
+    puntoSel.appendChild(placeholder);
+
+    items.forEach(function (item) {
+      var option = document.createElement('option');
+      option.value = String(item.id);
+      option.textContent = item.label;
+      if (selectedId && String(selectedId) === String(item.id)) {
+        option.selected = true;
+      }
+      puntoSel.appendChild(option);
+    });
+  }
+
+  function loadPuntosNorma(selectedId) {
+    if (!normaSel || !puntoSel) return;
+    if (!normaSel.value) {
+      renderPuntos([], '');
+      return;
+    }
+
+    fetch('/nc/normas/' + normaSel.value + '/puntos/', {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then(function (response) { return response.json(); })
+      .then(function (data) { renderPuntos(data.results || [], selectedId); })
+      .catch(function () { renderPuntos([], ''); });
+  }
+
+  if (normaSel) {
+    normaSel.addEventListener('change', function () {
+      loadPuntosNorma('');
+    });
+    loadPuntosNorma(initialPunto);
+  }
+
   // ── Origen ──────────────────────────────────────────────
   var origenSel = document.getElementById('id_origen');
   var bloqueQR  = document.getElementById('bloque_qr');

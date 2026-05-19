@@ -1,5 +1,9 @@
 from django import forms
-from .models import NoConformidad, CincoPorques, AdjuntoNC, OrigenNC, EficaciaNC, CausaRaizIdentificada
+from django.db import models
+from .models import (
+    NoConformidad, CincoPorques, AdjuntoNC, OrigenNC, EficaciaNC,
+    CausaRaizIdentificada, NormaNC, PuntoNormaNC,
+)
 
 
 class NoConformidadForm(forms.ModelForm):
@@ -7,7 +11,7 @@ class NoConformidadForm(forms.ModelForm):
         model = NoConformidad
         fields = [
             'fecha', 'sector', 'responsable', 'id_muestra_lote',
-            'parametro_afectado', 'descripcion', 'prioridad', 'clasificacion',
+            'parametro_afectado', 'norma', 'punto_norma', 'descripcion', 'prioridad', 'clasificacion',
             # Origen
             'origen', 'qr_relacionada', 'om_relacionada',
             # Corrección
@@ -26,6 +30,8 @@ class NoConformidadForm(forms.ModelForm):
             'sector': forms.Select(attrs={'class': 'form-input'}),
             'id_muestra_lote': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: SU-A342'}),
             'parametro_afectado': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: Humedad %'}),
+            'norma': forms.Select(attrs={'class': 'form-input', 'id': 'id_norma'}),
+            'punto_norma': forms.Select(attrs={'class': 'form-input', 'id': 'id_punto_norma'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-input', 'rows': 4,
                                                   'placeholder': 'Describí el problema detectado...'}),
             'prioridad': forms.Select(attrs={'class': 'form-input'}),
@@ -65,6 +71,12 @@ class NoConformidadForm(forms.ModelForm):
         self.fields['sector'].queryset = Sector.objects.filter(activo=True).order_by('nombre')
         self.fields['sector'].empty_label = 'Seleccionar sector...'
         self.fields['sector'].required = False
+        self.fields['norma'].queryset = NormaNC.objects.filter(activo=True, eliminado=False).order_by('nombre')
+        self.fields['norma'].empty_label = 'Seleccionar norma...'
+        self.fields['norma'].required = True
+        self.fields['punto_norma'].queryset = PuntoNormaNC.objects.none()
+        self.fields['punto_norma'].empty_label = 'Seleccionar punto de la norma...'
+        self.fields['punto_norma'].required = True
         self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
         self.fields['responsable_accion'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
@@ -78,11 +90,41 @@ class NoConformidadForm(forms.ModelForm):
         self.fields['om_relacionada'].empty_label = 'Seleccionar OM...'
         self.fields['om_relacionada'].required = False
 
+        norma_id = self.data.get('norma') or getattr(self.instance, 'norma_id', None)
+        punto_id = self.data.get('punto_norma') or getattr(self.instance, 'punto_norma_id', None)
+        if norma_id:
+            try:
+                queryset = PuntoNormaNC.objects.filter(
+                    norma_id=norma_id,
+                    activo=True,
+                    eliminado=False,
+                ).order_by('codigo', 'descripcion')
+                if punto_id:
+                    queryset = PuntoNormaNC.objects.filter(
+                        models.Q(pk=punto_id) |
+                        models.Q(
+                            norma_id=norma_id,
+                            activo=True,
+                            eliminado=False,
+                        )
+                    ).order_by('codigo', 'descripcion')
+                self.fields['punto_norma'].queryset = queryset
+            except (TypeError, ValueError):
+                self.fields['punto_norma'].queryset = PuntoNormaNC.objects.none()
+        elif getattr(self.instance, 'punto_norma_id', None):
+            self.fields['punto_norma'].queryset = PuntoNormaNC.objects.filter(
+                norma=self.instance.punto_norma.norma,
+                activo=True,
+                eliminado=False,
+            ).order_by('codigo', 'descripcion')
+
     def clean(self):
         cleaned = super().clean()
         origen = cleaned.get('origen')
         qr = cleaned.get('qr_relacionada')
         om = cleaned.get('om_relacionada')
+        norma = cleaned.get('norma')
+        punto_norma = cleaned.get('punto_norma')
         contaminacion = cleaned.get('contaminacion_cruzada')
         tipo_contam = cleaned.get('tipo_contaminacion')
         notificar = cleaned.get('notificar_cliente')
@@ -94,6 +136,12 @@ class NoConformidadForm(forms.ModelForm):
             self.add_error('qr_relacionada', 'Seleccioná la QyR asociada cuando el origen es Queja/Reclamo.')
         if origen == OrigenNC.OM and not om:
             self.add_error('om_relacionada', 'Seleccioná la OM asociada cuando el origen es Oportunidad de Mejora.')
+        if not norma:
+            self.add_error('norma', 'Seleccioná la norma asociada a la No Conformidad.')
+        if not punto_norma:
+            self.add_error('punto_norma', 'Seleccioná el punto de la norma asociado a la No Conformidad.')
+        if norma and punto_norma and punto_norma.norma_id != norma.id:
+            self.add_error('punto_norma', 'El punto seleccionado no corresponde a la norma elegida.')
         if contaminacion and not tipo_contam:
             self.add_error('tipo_contaminacion', 'Seleccioná el tipo de contaminación cruzada.')
         if notificar and not email:

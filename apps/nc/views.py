@@ -2,12 +2,17 @@
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import DatabaseError
+from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 
-from .models import NoConformidad, CincoPorques, EstadoNC, EficaciaNC, CausaRaizIdentificada
+from .models import (
+    NoConformidad, CincoPorques, EstadoNC, EficaciaNC,
+    CausaRaizIdentificada, NormaNC, PuntoNormaNC,
+)
 from .forms import NoConformidadForm, CincoPorquesForm, MatrizRiesgoForm, AdjuntoNCForm, EficaciaForm
 from apps.core.models import Sector
 
@@ -222,6 +227,8 @@ def detalle(request, pk):
                         fecha=timezone.now().date(),
                         sector=nc.sector,
                         responsable=nc.responsable,
+                        norma=nc.norma,
+                        punto_norma=nc.punto_norma,
                         descripcion=f'Seguimiento de {nc.folio} (No Eficaz): {nc.descripcion}',
                         prioridad=nc.prioridad,
                         clasificacion=nc.clasificacion,
@@ -389,6 +396,73 @@ def _puede_gestionar_causa_raiz(user):
     return user.rol == Rol.CALIDAD
 
 
+def _puede_gestionar_normas(user):
+    return _puede_gestionar_causa_raiz(user)
+
+
+def _parsear_puntos_norma(raw_texto):
+    puntos = []
+    vistos = set()
+    for linea in raw_texto.splitlines():
+        linea = linea.strip()
+        if not linea:
+            continue
+        codigo = ''
+        descripcion = linea
+        if ' - ' in linea:
+            codigo, descripcion = linea.split(' - ', 1)
+        elif ':' in linea:
+            codigo, descripcion = linea.split(':', 1)
+        codigo = codigo.strip()
+        descripcion = descripcion.strip()
+        if not descripcion:
+            continue
+        clave = (codigo.lower(), descripcion.lower())
+        if clave in vistos:
+            continue
+        vistos.add(clave)
+        puntos.append({'codigo': codigo, 'descripcion': descripcion})
+    return puntos
+
+
+def _serializar_puntos_norma(normas):
+    serializado = {}
+    for norma in normas:
+        serializado[str(norma.pk)] = [
+            {
+                'id': punto.pk,
+                'label': f'{punto.codigo} - {punto.descripcion}' if punto.codigo else punto.descripcion,
+            }
+            for punto in norma.puntos.filter(activo=True, eliminado=False).order_by('codigo', 'descripcion')
+        ]
+    return serializado
+
+
+@login_required
+def puntos_norma_por_norma(request, norma_id):
+    """Devuelve puntos activos de una norma para el dropdown dependiente."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'results': []}, status=403)
+
+    puntos = PuntoNormaNC.objects.filter(
+        norma_id=norma_id,
+        activo=True,
+        eliminado=False,
+        norma__eliminado=False,
+        norma__activo=True,
+    ).order_by('codigo', 'descripcion')
+
+    return JsonResponse({
+        'results': [
+            {
+                'id': punto.pk,
+                'label': f'{punto.codigo} - {punto.descripcion}' if punto.codigo else punto.descripcion,
+            }
+            for punto in puntos
+        ]
+    })
+
+
 @login_required
 def causa_raiz_lista(request):
     """Lista de Causas Raíz Identificadas."""
@@ -539,4 +613,192 @@ def causa_raiz_eliminar(request, pk):
         'causa': causa,
     }
     return render(request, 'nc/causa_raiz_confirmar_eliminar.html', context)
+
+
+# ── Normas CRUD ───────────────────────────────────────────────────────────────
+
+@login_required
+def norma_lista(request):
+    """Lista de normas y sus puntos asociados."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    normas = NormaNC.objects.filter(eliminado=False).annotate(
+        total_puntos_activos=Count('puntos', filter=Q(puntos__eliminado=False))
+    ).order_by('nombre')
+    context = {
+        'title': 'Normas',
+        'normas': normas,
+        'total': normas.count(),
+    }
+    return render(request, 'nc/norma_lista.html', context)
+
+
+@login_required
+def norma_crear(request):
+    """Crear una norma con sus puntos asociados."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        puntos_raw = request.POST.get('puntos', '').strip()
+        activo = request.POST.get('activo', 'on') == 'on'
+        puntos = _parsear_puntos_norma(puntos_raw)
+
+        if not nombre:
+            messages.error(request, 'El nombre de la norma es obligatorio.')
+        elif not puntos:
+            messages.error(request, 'Debes cargar al menos un punto de la norma.')
+        elif NormaNC.objects.filter(nombre__iexact=nombre, eliminado=False).exists():
+            messages.error(request, f'Ya existe una norma con el nombre "{nombre}".')
+        else:
+            norma = NormaNC.objects.create(
+                nombre=nombre,
+                descripcion=descripcion,
+                activo=activo,
+                creado_por=request.user,
+                actualizado_por=request.user,
+            )
+            PuntoNormaNC.objects.bulk_create([
+                PuntoNormaNC(
+                    norma=norma,
+                    codigo=punto['codigo'],
+                    descripcion=punto['descripcion'],
+                    creado_por=request.user,
+                    actualizado_por=request.user,
+                )
+                for punto in puntos
+            ])
+            messages.success(request, f'Norma "{nombre}" creada exitosamente.')
+            return redirect('nc:norma_detalle', pk=norma.pk)
+
+        return render(request, 'nc/norma_form.html', {
+            'title': 'Nueva Norma',
+            'is_create': True,
+            'nombre': nombre,
+            'descripcion': descripcion,
+            'puntos': puntos_raw,
+            'activo': activo,
+        })
+
+    return render(request, 'nc/norma_form.html', {
+        'title': 'Nueva Norma',
+        'is_create': True,
+        'activo': True,
+    })
+
+
+@login_required
+def norma_detalle(request, pk):
+    """Detalle de una norma y sus puntos."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    norma = get_object_or_404(
+        NormaNC.objects.prefetch_related('puntos'),
+        pk=pk,
+        eliminado=False,
+    )
+    context = {
+        'title': f'Norma: {norma.nombre}',
+        'norma': norma,
+        'puntos': norma.puntos.filter(eliminado=False).order_by('codigo', 'descripcion'),
+    }
+    return render(request, 'nc/norma_detalle.html', context)
+
+
+@login_required
+def norma_editar(request, pk):
+    """Editar una norma y reemplazar sus puntos vigentes."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    norma = get_object_or_404(NormaNC.objects.prefetch_related('puntos'), pk=pk, eliminado=False)
+
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        puntos_raw = request.POST.get('puntos', '').strip()
+        activo = request.POST.get('activo') == 'on'
+        puntos = _parsear_puntos_norma(puntos_raw)
+
+        if not nombre:
+            messages.error(request, 'El nombre de la norma es obligatorio.')
+        elif not puntos:
+            messages.error(request, 'Debes cargar al menos un punto de la norma.')
+        elif NormaNC.objects.filter(nombre__iexact=nombre, eliminado=False).exclude(pk=pk).exists():
+            messages.error(request, f'Ya existe otra norma con el nombre "{nombre}".')
+        else:
+            norma.nombre = nombre
+            norma.descripcion = descripcion
+            norma.activo = activo
+            norma.actualizado_por = request.user
+            norma.save()
+
+            norma.puntos.filter(eliminado=False).update(eliminado=True, actualizado_por=request.user)
+            PuntoNormaNC.objects.bulk_create([
+                PuntoNormaNC(
+                    norma=norma,
+                    codigo=punto['codigo'],
+                    descripcion=punto['descripcion'],
+                    creado_por=request.user,
+                    actualizado_por=request.user,
+                )
+                for punto in puntos
+            ])
+
+            messages.success(request, f'Norma "{nombre}" actualizada exitosamente.')
+            return redirect('nc:norma_detalle', pk=norma.pk)
+
+        return render(request, 'nc/norma_form.html', {
+            'title': f'Editar Norma: {norma.nombre}',
+            'norma': norma,
+            'nombre': nombre,
+            'descripcion': descripcion,
+            'puntos': puntos_raw,
+            'activo': activo,
+        })
+
+    puntos_existentes = '\n'.join(
+        f'{punto.codigo} - {punto.descripcion}' if punto.codigo else punto.descripcion
+        for punto in norma.puntos.filter(eliminado=False).order_by('codigo', 'descripcion')
+    )
+    return render(request, 'nc/norma_form.html', {
+        'title': f'Editar Norma: {norma.nombre}',
+        'norma': norma,
+        'nombre': norma.nombre,
+        'descripcion': norma.descripcion,
+        'puntos': puntos_existentes,
+        'activo': norma.activo,
+    })
+
+
+@login_required
+def norma_eliminar(request, pk):
+    """Eliminar lógicamente una norma y sus puntos."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    norma = get_object_or_404(NormaNC, pk=pk, eliminado=False)
+
+    if request.method == 'POST':
+        nombre = norma.nombre
+        norma.eliminado = True
+        norma.actualizado_por = request.user
+        norma.save()
+        norma.puntos.filter(eliminado=False).update(eliminado=True, actualizado_por=request.user)
+        messages.success(request, f'Norma "{nombre}" eliminada exitosamente.')
+        return redirect('nc:norma_lista')
+
+    return render(request, 'nc/norma_confirmar_eliminar.html', {
+        'title': f'Eliminar Norma: {norma.nombre}',
+        'norma': norma,
+    })
 

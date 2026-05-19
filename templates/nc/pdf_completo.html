@@ -78,6 +78,12 @@
       <td class="lbl">Parámetro afectado</td>
       <td class="val">{{ nc.parametro_afectado|default:"—" }}</td>
     </tr>
+    <tr>
+      <td class="lbl">Norma</td>
+      <td class="val">{{ nc.norma.nombre|default:"—" }}</td>
+      <td class="lbl">Punto de la norma</td>
+      <td class="val">{% if nc.punto_norma %}{% if nc.punto_norma.codigo %}{{ nc.punto_norma.codigo }} - {% endif %}{{ nc.punto_norma.descripcion }}{% else %}—{% endif %}</td>
+    </tr>
     {% if nc.qr_relacionada %}
     <tr>
       <td class="lbl">QyR asociada</td>

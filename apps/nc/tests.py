@@ -1,13 +1,15 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.core.management import call_command
 
 from apps.accounts.models import Usuario, Rol
 from apps.core.models import Sector
-from apps.nc.models import NoConformidad, EstadoNC, ClasificacionNC
+from apps.nc.models import NoConformidad, EstadoNC, ClasificacionNC, NormaNC, PuntoNormaNC
 
 
 class NCRoleWorkflowTests(TestCase):
     def setUp(self):
+        call_command('seed_grupos', solo_grupos=True, verbosity=0)
         self.operario = Usuario.objects.create_user(
             username='nc_operario',
             password='Operario1234!',
@@ -21,6 +23,18 @@ class NCRoleWorkflowTests(TestCase):
             is_active=True,
         )
         self.sector, _ = Sector.objects.get_or_create(nombre='Laboratorio')
+        self.norma = NormaNC.objects.create(
+            nombre='ISO 9001:2015',
+            creado_por=self.calidad,
+            actualizado_por=self.calidad,
+        )
+        self.punto_norma = PuntoNormaNC.objects.create(
+            norma=self.norma,
+            codigo='8.7',
+            descripcion='Control de las salidas no conformes',
+            creado_por=self.calidad,
+            actualizado_por=self.calidad,
+        )
 
     def test_operario_crea_nc_en_revision(self):
         self.client.login(username='nc_operario', password='Operario1234!')
@@ -30,6 +44,8 @@ class NCRoleWorkflowTests(TestCase):
             'responsable': self.operario.pk,
             'id_muestra_lote': 'L-001',
             'parametro_afectado': 'Humedad',
+            'norma': self.norma.pk,
+            'punto_norma': self.punto_norma.pk,
             'descripcion': 'Descripcion de prueba',
             'prioridad': 'media',
             'clasificacion': ClasificacionNC.PROCESO,
@@ -43,6 +59,8 @@ class NCRoleWorkflowTests(TestCase):
         nc = NoConformidad.objects.create(
             sector=self.sector,
             responsable=self.operario,
+            norma=self.norma,
+            punto_norma=self.punto_norma,
             descripcion='NC a revisar',
             prioridad='media',
             clasificacion=ClasificacionNC.PROCESO,
@@ -58,3 +76,32 @@ class NCRoleWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         nc.refresh_from_db()
         self.assertEqual(nc.estado, EstadoNC.BORRADOR)
+
+    def test_creacion_nc_rechaza_punto_de_otra_norma(self):
+        otra_norma = NormaNC.objects.create(
+            nombre='BPM',
+            creado_por=self.calidad,
+            actualizado_por=self.calidad,
+        )
+        punto_otra_norma = PuntoNormaNC.objects.create(
+            norma=otra_norma,
+            codigo='4.1',
+            descripcion='Condiciones edilicias',
+            creado_por=self.calidad,
+            actualizado_por=self.calidad,
+        )
+
+        self.client.login(username='nc_operario', password='Operario1234!')
+        response = self.client.post(reverse('nc:crear'), {
+            'fecha': '2026-04-24',
+            'sector': self.sector.pk,
+            'responsable': self.operario.pk,
+            'norma': self.norma.pk,
+            'punto_norma': punto_otra_norma.pk,
+            'descripcion': 'Descripcion de prueba',
+            'prioridad': 'media',
+            'clasificacion': ClasificacionNC.PROCESO,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'El punto seleccionado no corresponde a la norma elegida.')

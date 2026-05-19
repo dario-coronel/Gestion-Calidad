@@ -79,6 +79,8 @@
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Responsable</dt><dd>{{ nc.responsable.get_full_name|default:nc.responsable.username }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">ID Muestra / Lote</dt><dd>{{ nc.id_muestra_lote|default:"—" }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Parámetro</dt><dd>{{ nc.parametro_afectado|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Norma</dt><dd>{{ nc.norma.nombre|default:"—" }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Punto de la norma</dt><dd>{% if nc.punto_norma %}{% if nc.punto_norma.codigo %}{{ nc.punto_norma.codigo }} - {% endif %}{{ nc.punto_norma.descripcion }}{% else %}—{% endif %}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Clasificación</dt><dd>{{ nc.get_clasificacion_display }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Prioridad</dt><dd>{{ nc.get_prioridad_display }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Origen</dt><dd>{{ nc.get_origen_display }}</dd></div>

@@ -1,5 +1,8 @@
 ﻿from django.contrib import admin
-from .models import NoConformidad, CincoPorques, AdjuntoNC, CausaRaizIdentificada
+from .models import (
+    NoConformidad, CincoPorques, AdjuntoNC, CausaRaizIdentificada,
+    NormaNC, PuntoNormaNC,
+)
 
 
 class CincoPorquesInline(admin.StackedInline):
@@ -46,11 +49,35 @@ class CausaRaizIdentificadaAdmin(admin.ModelAdmin):
         return user.rol == Rol.CALIDAD
 
 
+class PuntoNormaNCInline(admin.TabularInline):
+    model = PuntoNormaNC
+    extra = 1
+    fields = ('codigo', 'descripcion', 'activo')
+
+
+@admin.register(NormaNC)
+class NormaNCAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'activo', 'creado_en')
+    list_filter = ('activo', 'creado_en')
+    search_fields = ('nombre', 'descripcion', 'puntos__codigo', 'puntos__descripcion')
+    readonly_fields = ('creado_en', 'actualizado_en', 'creado_por', 'actualizado_por')
+    inlines = [PuntoNormaNCInline]
+
+    def has_add_permission(self, request):
+        return CausaRaizIdentificadaAdmin._es_admin_o_calidad(self, request.user)
+
+    def has_change_permission(self, request, obj=None):
+        return CausaRaizIdentificadaAdmin._es_admin_o_calidad(self, request.user)
+
+    def has_delete_permission(self, request, obj=None):
+        return CausaRaizIdentificadaAdmin._es_admin_o_calidad(self, request.user)
+
+
 @admin.register(NoConformidad)
 class NoConformidadAdmin(admin.ModelAdmin):
-    list_display = ('folio', 'fecha', 'sector', 'prioridad', 'clasificacion', 'estado', 'riesgo_calculado')
-    list_filter = ('estado', 'prioridad', 'clasificacion', 'sector')
-    search_fields = ('folio', 'descripcion', 'id_muestra_lote')
+    list_display = ('folio', 'fecha', 'sector', 'norma', 'punto_norma', 'prioridad', 'clasificacion', 'estado', 'riesgo_calculado')
+    list_filter = ('estado', 'prioridad', 'clasificacion', 'sector', 'norma')
+    search_fields = ('folio', 'descripcion', 'id_muestra_lote', 'norma__nombre', 'punto_norma__codigo', 'punto_norma__descripcion')
     inlines = [CincoPorquesInline, AdjuntoNCInline]
     readonly_fields = ('folio', 'creado_en', 'actualizado_en')
 

@@ -72,6 +72,16 @@ class NoConformidad(ModeloBase):
     )
     id_muestra_lote = models.CharField(max_length=100, blank=True)
     parametro_afectado = models.CharField(max_length=100, blank=True)
+    norma = models.ForeignKey(
+        'NormaNC', on_delete=models.PROTECT,
+        null=True, blank=True, related_name='no_conformidades',
+        verbose_name='Norma'
+    )
+    punto_norma = models.ForeignKey(
+        'PuntoNormaNC', on_delete=models.PROTECT,
+        null=True, blank=True, related_name='no_conformidades',
+        verbose_name='Punto de la norma'
+    )
     descripcion = models.TextField()
     prioridad = models.CharField(max_length=10, choices=PrioridadNC, default=PrioridadNC.MEDIA)
     clasificacion = models.CharField(max_length=30, choices=ClasificacionNC)
@@ -185,6 +195,8 @@ class NoConformidad(ModeloBase):
         return None
 
     def save(self, *args, **kwargs):
+        if self.punto_norma and not self.norma_id:
+            self.norma = self.punto_norma.norma
         if not self.folio:
             anio = self.fecha.year if self.fecha else timezone.now().year
             ultimo = NoConformidad.objects.filter(
@@ -192,6 +204,74 @@ class NoConformidad(ModeloBase):
             ).count()
             self.folio = f'NC-{anio}-{str(ultimo + 1).zfill(4)}'
         super().save(*args, **kwargs)
+
+
+class NormaNC(ModeloBase):
+    """Catálogo de normas aplicables a No Conformidades."""
+    nombre = models.CharField(
+        max_length=255, unique=True,
+        verbose_name='Norma',
+        help_text='Ej: ISO 9001:2015, BPM, HACCP'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Detalle opcional para contextualizar la norma'
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Marcar inactiva para dejar de usarla sin eliminarla'
+    )
+
+    class Meta:
+        verbose_name = 'Norma'
+        verbose_name_plural = 'Normas'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
+class PuntoNormaNC(ModeloBase):
+    """Puntos o cláusulas asociadas a una norma."""
+    norma = models.ForeignKey(
+        NormaNC, on_delete=models.CASCADE,
+        related_name='puntos',
+        verbose_name='Norma'
+    )
+    codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Código / Punto',
+        help_text='Ej: 8.7, 7.1.5, Cap. 4'
+    )
+    descripcion = models.CharField(
+        max_length=255,
+        verbose_name='Descripción del punto',
+        help_text='Ej: Control de las salidas no conformes'
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Marcar inactivo para dejar de usarlo sin eliminarlo'
+    )
+
+    class Meta:
+        verbose_name = 'Punto de Norma'
+        verbose_name_plural = 'Puntos de Norma'
+        ordering = ['norma__nombre', 'codigo', 'descripcion']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['norma', 'codigo', 'descripcion'],
+                name='nc_puntonorman_unique_por_norma'
+            ),
+        ]
+
+    def __str__(self):
+        if self.codigo:
+            return f'{self.norma.nombre} - {self.codigo} - {self.descripcion}'
+        return f'{self.norma.nombre} - {self.descripcion}'
 
 
 class CausaRaizIdentificada(ModeloBase):

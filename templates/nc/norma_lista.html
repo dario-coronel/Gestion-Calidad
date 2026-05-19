@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-black text-gray-900">{{ title }}</h1>
+      <p class="mt-1 text-sm text-gray-600">Gestiona el catálogo de normas y sus puntos asociados.</p>
+    </div>
+    <a href="{% url 'nc:norma_crear' %}" class="btn-primary text-sm">Nueva Norma</a>
+  </div>
+
+  {% if normas %}
+    <div class="rounded-lg border border-gray-200 bg-white shadow overflow-hidden">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-200 bg-gray-50">
+            <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-700">Norma</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-700">Puntos</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-700">Estado</th>
+            <th class="px-6 py-3 text-right text-xs font-semibold uppercase text-gray-700">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for norma in normas %}
+            <tr class="border-b border-gray-200 hover:bg-gray-50 transition align-top">
+              <td class="px-6 py-4">
+                <a href="{% url 'nc:norma_detalle' norma.pk %}" class="font-medium text-primary hover:underline">{{ norma.nombre }}</a>
+                {% if norma.descripcion %}<p class="mt-1 text-sm text-gray-600">{{ norma.descripcion|truncatewords:12 }}</p>{% endif %}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ norma.total_puntos_activos }} punto{{ norma.total_puntos_activos|pluralize }}
+              </td>
+              <td class="px-6 py-4">
+                {% if norma.activo %}
+                  <span class="inline-flex items-center rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">Activa</span>
+                {% else %}
+                  <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">Inactiva</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex gap-2 justify-end">
+                  <a href="{% url 'nc:norma_editar' norma.pk %}" class="inline-flex items-center rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition">Editar</a>
+                  <a href="{% url 'nc:norma_eliminar' norma.pk %}" class="inline-flex items-center rounded-lg bg-danger/10 px-3 py-2 text-xs font-semibold text-danger hover:bg-danger/20 transition">Eliminar</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+      <h3 class="text-sm font-medium text-gray-900">No hay Normas cargadas</h3>
+      <p class="mt-1 text-sm text-gray-600">Comienza creando una norma con al menos un punto asociado.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-black text-gray-900">{{ norma.nombre }}</h1>
+      {% if norma.descripcion %}<p class="mt-1 text-sm text-gray-600">{{ norma.descripcion }}</p>{% endif %}
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'nc:norma_editar' norma.pk %}" class="btn-secondary text-sm">Editar</a>
+      <a href="{% url 'nc:norma_lista' %}" class="btn-secondary text-sm">Volver</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Puntos asociados</h2>
+    <div class="space-y-2">
+      {% for punto in puntos %}
+        <div class="rounded-lg border border-gray-200 px-4 py-3">
+          <p class="font-medium text-gray-800">{% if punto.codigo %}{{ punto.codigo }} - {% endif %}{{ punto.descripcion }}</p>
+        </div>
+      {% empty %}
+        <p class="text-sm text-gray-500">La norma no tiene puntos activos.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
