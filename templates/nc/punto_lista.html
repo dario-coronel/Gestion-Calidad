@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Navegación -->
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <a href="{% url 'nc:norma_lista' %}" class="text-blue-600 hover:text-blue-800">
+                ← Volver a Normas
+            </a>
+        </div>
+        {% if norma %}
+        <h1 class="text-3xl font-bold">{{ norma.nombre }}</h1>
+        <a href="{% url 'nc:punto_crear' norma.pk %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            + Nuevo Punto
+        </a>
+        {% else %}
+        <h1 class="text-3xl font-bold">Todos los Puntos de Normas</h1>
+        <div></div>
+        {% endif %}
+    </div>
+
+    <!-- Tabla de Puntos -->
+    {% if puntos %}
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="w-full border-collapse">
+            <thead class="bg-gray-100 border-b-2 border-gray-300">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Código</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Descripción</th>
+                    {% if not norma %}
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Norma</th>
+                    {% endif %}
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Estado</th>
+                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for punto in puntos %}
+                <tr class="border-b hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 text-sm font-mono text-gray-900">{{ punto.codigo|default:'—' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">{{ punto.descripcion }}</td>
+                    {% if not norma %}
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                        <a href="{% url 'nc:norma_detalle' punto.norma.pk %}" class="text-blue-600 hover:underline">
+                            {{ punto.norma.nombre }}
+                        </a>
+                    </td>
+                    {% endif %}
+                    <td class="px-6 py-4 text-sm">
+                        {% if punto.activo %}
+                        <span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Activo</span>
+                        {% else %}
+                        <span class="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-semibold">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-center">
+                        <a href="{% url 'nc:punto_editar' punto.pk %}" class="text-blue-600 hover:text-blue-800 mr-3">Editar</a>
+                        <a href="{% url 'nc:punto_eliminar' punto.pk %}" class="text-red-600 hover:text-red-800">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <p class="text-sm text-blue-700">
+            Total de puntos: <strong>{{ puntos|length }}</strong>
+        </p>
+    </div>
+    {% else %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+        <p class="text-sm text-yellow-700">
+            No hay puntos registrados.
+            {% if norma %}
+            <a href="{% url 'nc:punto_crear' norma.pk %}" class="underline font-semibold">Crear el primer punto</a>
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

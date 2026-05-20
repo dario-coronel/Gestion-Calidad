@@ -1,4 +1,4 @@
-﻿from django.urls import path
+﻿from django.urls import path, re_path
 from . import views
 
 app_name = 'nc'
@@ -25,4 +25,14 @@ urlpatterns = [
     path('normas/<int:pk>/', views.norma_detalle, name='norma_detalle'),
     path('normas/<int:pk>/editar/', views.norma_editar, name='norma_editar'),
     path('normas/<int:pk>/eliminar/', views.norma_eliminar, name='norma_eliminar'),
+
+    # Puntos de Norma
+    path('puntos/', views.punto_lista, name='punto_lista'),
+    path('normas/<int:norma_id>/puntos/lista/', views.punto_lista, name='punto_lista_norma'),
+    path('normas/<int:norma_id>/puntos/nuevo/', views.punto_crear, name='punto_crear'),
+    # Compatibilidad temporal para enlaces cacheados/malformados con doble slash final.
+    re_path(r'^normas/(?P<norma_id>\d+)/puntos/lista//+$', views.punto_lista),
+    re_path(r'^normas/(?P<norma_id>\d+)/puntos/nuevo//+$', views.punto_crear),
+    path('puntos/<int:pk>/editar/', views.punto_editar, name='punto_editar'),
+    path('puntos/<int:pk>/eliminar/', views.punto_eliminar, name='punto_eliminar'),
 ]
