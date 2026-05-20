@@ -69,5 +69,11 @@ nav:
     - QR y Trazabilidad: qr-trazabilidad.md
   - Análisis:
     - Reportes: reportes.md
+  - Referencia:
+    - Diagramas de Flujo: diagramas.md
+    - Glosario: glosario.md
+  - Implementación:
+    - Instalación y Configuración: instalacion-configuracion.md
+    - Tutoriales en Video: videos-tutoriales.md
   - Ayuda:
     - FAQ: faq.md

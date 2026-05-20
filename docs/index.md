@@ -28,6 +28,10 @@ Este sistema permite gestionar de manera centralizada:
 - [Órdenes de Mejora](./ordenes-mejora.md) - Acciones correctivas
 - [QR y Trazabilidad](./qr-trazabilidad.md) - Códigos y seguimiento
 - [Reportes](./reportes.md) - Análisis y estadísticas
+- [Diagramas de Flujo](./diagramas.md) - Visualización de procesos
+- [Glosario](./glosario.md) - Definición de términos
+- [Instalación](./instalacion-configuracion.md) - Setup y configuración
+- [Tutoriales en Video](./videos-tutoriales.md) - Guías visuales
 - [FAQ](./faq.md) - Preguntas frecuentes
 
 ## Soporte
