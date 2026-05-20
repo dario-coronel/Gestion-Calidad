@@ -617,6 +617,7 @@ def causa_raiz_eliminar(request, pk):
 
 # ── Normas CRUD ───────────────────────────────────────────────────────────────
 
+
 @login_required
 def norma_lista(request):
     """Lista de normas y sus puntos asociados."""
@@ -624,8 +625,10 @@ def norma_lista(request):
         messages.error(request, 'No tienes permiso para acceder a este recurso.')
         return redirect('core:home')
 
-    normas = NormaNC.objects.filter(eliminado=False).annotate(
-        total_puntos_activos=Count('puntos', filter=Q(puntos__eliminado=False))
+    normas = NormaNC.objects.filter(eliminado=False).prefetch_related(
+        'puntos'
+    ).annotate(
+        total_puntos_activos=Count('puntos', filter=Q(puntos__eliminado=False, puntos__activo=True))
     ).order_by('nombre')
     context = {
         'title': 'Normas',
@@ -637,58 +640,29 @@ def norma_lista(request):
 
 @login_required
 def norma_crear(request):
-    """Crear una norma con sus puntos asociados."""
+    """Crear una norma."""
     if not _puede_gestionar_normas(request.user):
         messages.error(request, 'No tienes permiso para acceder a este recurso.')
         return redirect('core:home')
 
     if request.method == 'POST':
-        nombre = request.POST.get('nombre', '').strip()
-        descripcion = request.POST.get('descripcion', '').strip()
-        puntos_raw = request.POST.get('puntos', '').strip()
-        activo = request.POST.get('activo', 'on') == 'on'
-        puntos = _parsear_puntos_norma(puntos_raw)
-
-        if not nombre:
-            messages.error(request, 'El nombre de la norma es obligatorio.')
-        elif not puntos:
-            messages.error(request, 'Debes cargar al menos un punto de la norma.')
-        elif NormaNC.objects.filter(nombre__iexact=nombre, eliminado=False).exists():
-            messages.error(request, f'Ya existe una norma con el nombre "{nombre}".')
-        else:
-            norma = NormaNC.objects.create(
-                nombre=nombre,
-                descripcion=descripcion,
-                activo=activo,
-                creado_por=request.user,
-                actualizado_por=request.user,
-            )
-            PuntoNormaNC.objects.bulk_create([
-                PuntoNormaNC(
-                    norma=norma,
-                    codigo=punto['codigo'],
-                    descripcion=punto['descripcion'],
-                    creado_por=request.user,
-                    actualizado_por=request.user,
-                )
-                for punto in puntos
-            ])
-            messages.success(request, f'Norma "{nombre}" creada exitosamente.')
+        from .forms import NormaNCForm
+        form = NormaNCForm(request.POST)
+        if form.is_valid():
+            norma = form.save(commit=False)
+            norma.creado_por = request.user
+            norma.actualizado_por = request.user
+            norma.save()
+            messages.success(request, f'Norma "{norma.nombre}" creada exitosamente.')
             return redirect('nc:norma_detalle', pk=norma.pk)
-
-        return render(request, 'nc/norma_form.html', {
-            'title': 'Nueva Norma',
-            'is_create': True,
-            'nombre': nombre,
-            'descripcion': descripcion,
-            'puntos': puntos_raw,
-            'activo': activo,
-        })
+    else:
+        from .forms import NormaNCForm
+        form = NormaNCForm()
 
     return render(request, 'nc/norma_form.html', {
         'title': 'Nueva Norma',
         'is_create': True,
-        'activo': True,
+        'form': form,
     })
 
 
@@ -707,75 +681,37 @@ def norma_detalle(request, pk):
     context = {
         'title': f'Norma: {norma.nombre}',
         'norma': norma,
-        'puntos': norma.puntos.filter(eliminado=False).order_by('codigo', 'descripcion'),
+        'puntos': norma.puntos.filter(eliminado=False, activo=True).order_by('codigo', 'descripcion'),
     }
     return render(request, 'nc/norma_detalle.html', context)
 
 
 @login_required
 def norma_editar(request, pk):
-    """Editar una norma y reemplazar sus puntos vigentes."""
+    """Editar una norma."""
     if not _puede_gestionar_normas(request.user):
         messages.error(request, 'No tienes permiso para acceder a este recurso.')
         return redirect('core:home')
 
-    norma = get_object_or_404(NormaNC.objects.prefetch_related('puntos'), pk=pk, eliminado=False)
+    norma = get_object_or_404(NormaNC, pk=pk, eliminado=False)
 
     if request.method == 'POST':
-        nombre = request.POST.get('nombre', '').strip()
-        descripcion = request.POST.get('descripcion', '').strip()
-        puntos_raw = request.POST.get('puntos', '').strip()
-        activo = request.POST.get('activo') == 'on'
-        puntos = _parsear_puntos_norma(puntos_raw)
-
-        if not nombre:
-            messages.error(request, 'El nombre de la norma es obligatorio.')
-        elif not puntos:
-            messages.error(request, 'Debes cargar al menos un punto de la norma.')
-        elif NormaNC.objects.filter(nombre__iexact=nombre, eliminado=False).exclude(pk=pk).exists():
-            messages.error(request, f'Ya existe otra norma con el nombre "{nombre}".')
-        else:
-            norma.nombre = nombre
-            norma.descripcion = descripcion
-            norma.activo = activo
+        from .forms import NormaNCForm
+        form = NormaNCForm(request.POST, instance=norma)
+        if form.is_valid():
+            norma = form.save(commit=False)
             norma.actualizado_por = request.user
             norma.save()
-
-            norma.puntos.filter(eliminado=False).update(eliminado=True, actualizado_por=request.user)
-            PuntoNormaNC.objects.bulk_create([
-                PuntoNormaNC(
-                    norma=norma,
-                    codigo=punto['codigo'],
-                    descripcion=punto['descripcion'],
-                    creado_por=request.user,
-                    actualizado_por=request.user,
-                )
-                for punto in puntos
-            ])
-
-            messages.success(request, f'Norma "{nombre}" actualizada exitosamente.')
+            messages.success(request, f'Norma "{norma.nombre}" actualizada exitosamente.')
             return redirect('nc:norma_detalle', pk=norma.pk)
+    else:
+        from .forms import NormaNCForm
+        form = NormaNCForm(instance=norma)
 
-        return render(request, 'nc/norma_form.html', {
-            'title': f'Editar Norma: {norma.nombre}',
-            'norma': norma,
-            'nombre': nombre,
-            'descripcion': descripcion,
-            'puntos': puntos_raw,
-            'activo': activo,
-        })
-
-    puntos_existentes = '\n'.join(
-        f'{punto.codigo} - {punto.descripcion}' if punto.codigo else punto.descripcion
-        for punto in norma.puntos.filter(eliminado=False).order_by('codigo', 'descripcion')
-    )
     return render(request, 'nc/norma_form.html', {
         'title': f'Editar Norma: {norma.nombre}',
         'norma': norma,
-        'nombre': norma.nombre,
-        'descripcion': norma.descripcion,
-        'puntos': puntos_existentes,
-        'activo': norma.activo,
+        'form': form,
     })
 
 
@@ -802,3 +738,146 @@ def norma_eliminar(request, pk):
         'norma': norma,
     })
 
+
+# ── Puntos de Norma CRUD ──────────────────────────────────────────────────────
+
+@login_required
+def punto_lista(request, norma_id=None):
+    """Lista de puntos de una norma, o todas si no especifica norma."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    norma = None
+    if norma_id:
+        norma = get_object_or_404(NormaNC, pk=norma_id, eliminado=False)
+        puntos = norma.puntos.filter(eliminado=False).order_by('codigo', 'descripcion')
+    else:
+        puntos = PuntoNormaNC.objects.filter(eliminado=False).select_related('norma').order_by('norma__nombre', 'codigo', 'descripcion')
+
+    context = {
+        'title': f'Puntos de {norma.nombre}' if norma else 'Puntos de Normas',
+        'norma': norma,
+        'puntos': puntos,
+        'normas': NormaNC.objects.filter(eliminado=False, activo=True).order_by('nombre'),
+    }
+    return render(request, 'nc/punto_lista.html', context)
+
+
+@login_required
+def punto_crear(request, norma_id):
+    """Crear un punto de norma."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    norma = get_object_or_404(NormaNC, pk=norma_id, eliminado=False)
+
+    if request.method == 'POST':
+        from .forms import PuntoNormaNCForm
+        form = PuntoNormaNCForm(request.POST)
+        if form.is_valid():
+            codigo = (form.cleaned_data.get('codigo') or '').strip()
+            descripcion = (form.cleaned_data.get('descripcion') or '').strip()
+            activo = form.cleaned_data.get('activo', True)
+
+            existente = PuntoNormaNC.objects.filter(
+                norma=norma,
+                codigo=codigo,
+                descripcion=descripcion,
+            ).first()
+
+            if existente and not existente.eliminado:
+                form.add_error('descripcion', 'Ya existe un punto con ese código y descripción para esta norma.')
+            elif existente and existente.eliminado:
+                existente.eliminado = False
+                existente.activo = activo
+                existente.actualizado_por = request.user
+                existente.save(update_fields=['eliminado', 'activo', 'actualizado_por', 'actualizado_en'])
+                messages.success(request, 'El punto ya existía y fue reactivado exitosamente.')
+                return redirect('nc:punto_lista_norma', norma_id=norma.pk)
+            else:
+                punto = form.save(commit=False)
+                punto.norma = norma
+                punto.creado_por = request.user
+                punto.actualizado_por = request.user
+                punto.save()
+                messages.success(request, 'Punto creado exitosamente.')
+                return redirect('nc:punto_lista_norma', norma_id=norma.pk)
+    else:
+        from .forms import PuntoNormaNCForm
+        form = PuntoNormaNCForm()
+
+    return render(request, 'nc/punto_form.html', {
+        'title': f'Nuevo Punto - {norma.nombre}',
+        'norma': norma,
+        'form': form,
+        'is_create': True,
+    })
+
+
+@login_required
+def punto_editar(request, pk):
+    """Editar un punto de norma."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    punto = get_object_or_404(PuntoNormaNC, pk=pk, eliminado=False)
+
+    if request.method == 'POST':
+        from .forms import PuntoNormaNCForm
+        form = PuntoNormaNCForm(request.POST, instance=punto)
+        if form.is_valid():
+            codigo = (form.cleaned_data.get('codigo') or '').strip()
+            descripcion = (form.cleaned_data.get('descripcion') or '').strip()
+
+            conflicto = PuntoNormaNC.objects.filter(
+                norma=punto.norma,
+                codigo=codigo,
+                descripcion=descripcion,
+                eliminado=False,
+            ).exclude(pk=punto.pk).exists()
+
+            if conflicto:
+                form.add_error('descripcion', 'Ya existe otro punto activo con ese código y descripción para esta norma.')
+            else:
+                punto = form.save(commit=False)
+                punto.actualizado_por = request.user
+                punto.save()
+                messages.success(request, 'Punto actualizado exitosamente.')
+                return redirect('nc:punto_lista_norma', norma_id=punto.norma.pk)
+    else:
+        from .forms import PuntoNormaNCForm
+        form = PuntoNormaNCForm(instance=punto)
+
+    return render(request, 'nc/punto_form.html', {
+        'title': f'Editar Punto - {punto.norma.nombre}',
+        'norma': punto.norma,
+        'punto': punto,
+        'form': form,
+    })
+
+
+@login_required
+def punto_eliminar(request, pk):
+    """Eliminar un punto de norma."""
+    if not _puede_gestionar_normas(request.user):
+        messages.error(request, 'No tienes permiso para acceder a este recurso.')
+        return redirect('core:home')
+
+    punto = get_object_or_404(PuntoNormaNC, pk=pk, eliminado=False)
+    norma_id = punto.norma.pk
+
+    if request.method == 'POST':
+        punto.eliminado = True
+        punto.actualizado_por = request.user
+        punto.save()
+        messages.success(request, 'Punto eliminado exitosamente.')
+        return redirect('nc:punto_lista_norma', norma_id=norma_id)
+
+    return render(request, 'nc/punto_confirmar_eliminar.html', {
+        'title': f'Eliminar Punto - {punto.norma.nombre}',
+        'punto': punto,
+        'norma': punto.norma,
+    })

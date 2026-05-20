@@ -267,6 +267,18 @@
     .form-input:focus { outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,0.12); }
     .form-label { display: block; font-size: 0.8125rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem; }
     .card { background-color: white; border-radius: 0.75rem; border: 1px solid #e5e7eb; padding: 1.25rem; }
+    /* Responsive Table Wrapper */
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    @media (max-width: 767px) {
+      .table-responsive { margin: -1.25rem -1.25rem 1.25rem -1.25rem; padding: 1.25rem; }
+      .table-responsive table { font-size: 0.8125rem; }
+      .table-responsive th, .table-responsive td { padding: 0.5rem 0.625rem; }
+    }
+    table { border-collapse: collapse; width: 100%; }
+    table thead { background-color: #f3f4f6; }
+    table th { font-weight: 600; text-align: left; padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }
+    table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; }
+    table tbody tr:hover { background-color: #f9fafb; }
     @keyframes toast-in  { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(12px); } }
     .toast-item { animation: toast-in 0.25s ease forwards; }

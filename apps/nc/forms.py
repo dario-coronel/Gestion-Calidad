@@ -245,3 +245,27 @@ class AdjuntoNCForm(forms.ModelForm):
         widgets = {
             'archivo': forms.FileInput(attrs={'class': 'form-input', 'accept': '.jpg,.jpeg,.png,.pdf,.xlsx,.xls'}),
         }
+
+
+class NormaNCForm(forms.ModelForm):
+    """Formulario simple para crear/editar Normas sin puntos inline."""
+    class Meta:
+        model = NormaNC
+        fields = ['nombre', 'descripcion', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: ISO 9001:2015'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Descripción opcional...'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+        }
+
+
+class PuntoNormaNCForm(forms.ModelForm):
+    """Formulario para crear/editar puntos de norma."""
+    class Meta:
+        model = PuntoNormaNC
+        fields = ['codigo', 'descripcion', 'activo']
+        widgets = {
+            'codigo': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: 8.7, 1.3'}),
+            'descripcion': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Descripción del punto'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+        }

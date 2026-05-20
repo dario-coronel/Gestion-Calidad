@@ -264,6 +264,7 @@ class PuntoNormaNC(ModeloBase):
         constraints = [
             models.UniqueConstraint(
                 fields=['norma', 'codigo', 'descripcion'],
+                condition=models.Q(eliminado=False),
                 name='nc_puntonorman_unique_por_norma'
             ),
         ]

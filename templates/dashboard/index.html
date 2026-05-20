@@ -4,6 +4,32 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
+<div class="card mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+  <div>
+    <p class="text-xs uppercase tracking-wider text-gray-400">Análisis de Quejas y Reclamos</p>
+    <h2 class="text-lg font-semibold text-gray-800">{{ qr_period_label }}</h2>
+  </div>
+  <form method="get" class="flex flex-wrap items-end gap-3">
+    <div>
+      <label class="form-label">Período QyR</label>
+      <select name="period" class="form-input min-w-48">
+        <option value="30d" {% if qr_period == '30d' %}selected{% endif %}>Últimos 30 días</option>
+        <option value="90d" {% if qr_period == '90d' %}selected{% endif %}>Últimos 90 días</option>
+        <option value="12m" {% if qr_period == '12m' %}selected{% endif %}>Últimos 12 meses</option>
+        <option value="all" {% if qr_period == 'all' %}selected{% endif %}>Todo el historial</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary h-10">Aplicar</button>
+  </form>
+</div>
+
+{% if kpi_qr_alerta_vencidas %}
+<div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+  <p class="text-sm font-semibold">Atención: hay QyR vencidas en el período seleccionado.</p>
+  <p class="text-sm">Revisá las vencidas para evitar demoras en el cierre y seguimiento.</p>
+</div>
+{% endif %}
+
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-5">
   <div class="card">
     <p class="text-xs uppercase tracking-wider text-gray-400">Total NC</p>
@@ -20,6 +46,22 @@
   <div class="card">
     <p class="text-xs uppercase tracking-wider text-gray-400">Riesgo Promedio</p>
     <p class="text-3xl font-bold text-primary mt-1">{{ kpi_riesgo_promedio }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs uppercase tracking-wider text-gray-400">Total QyR</p>
+    <p class="text-3xl font-bold text-gray-800 mt-1">{{ kpi_total_qr }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs uppercase tracking-wider text-gray-400">QyR Abiertas</p>
+    <p class="text-3xl font-bold text-warning mt-1">{{ kpi_qr_abiertas }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs uppercase tracking-wider text-gray-400">QyR Vencidas</p>
+    <p class="text-3xl font-bold text-danger mt-1">{{ kpi_qr_vencidas }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs uppercase tracking-wider text-gray-400">QyR Días Promedio</p>
+    <p class="text-3xl font-bold text-primary mt-1">{{ kpi_qr_dias_promedio }}</p>
   </div>
   <div class="card">
     <p class="text-xs uppercase tracking-wider text-gray-400">Proyectos Activos</p>
@@ -39,6 +81,27 @@
     </div>
   </div>
 
+  <div class="card">
+    <h2 class="text-sm font-semibold text-gray-700 mb-3">Quejas y Reclamos por Estado</h2>
+    <div class="h-72">
+      <canvas id="chartQrEstados"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 mb-5">
+  <div class="card">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold text-gray-700">Tendencia mensual de Quejas y Reclamos</h2>
+      <span class="text-xs text-gray-500">Según período seleccionado</span>
+    </div>
+    <div class="h-72">
+      <canvas id="chartQrTendencia"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-1 gap-5 mb-5">
   <div class="card">
     <h2 class="text-sm font-semibold text-gray-700 mb-3">Proyectos por Estado</h2>
     <div class="h-72">
@@ -133,6 +196,34 @@
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5">
   <div class="card overflow-hidden p-0">
     <div class="px-4 py-3 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-700">Últimas Quejas y Reclamos</h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-4 py-2 text-left">Folio</th>
+          <th class="px-4 py-2 text-left">Tipo</th>
+          <th class="px-4 py-2 text-left">Estado</th>
+          <th class="px-4 py-2 text-left">Fecha</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for qr in ultimas_qr %}
+        <tr>
+          <td class="px-4 py-2 font-mono font-semibold">{{ qr.folio }}</td>
+          <td class="px-4 py-2">{{ qr.get_tipo_reclamo_display }}</td>
+          <td class="px-4 py-2">{{ qr.get_estado_display }}</td>
+          <td class="px-4 py-2">{{ qr.fecha|date:"d/m/Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Sin registros</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card overflow-hidden p-0">
+    <div class="px-4 py-3 border-b border-gray-100">
       <h2 class="text-sm font-semibold text-gray-700">Últimas No Conformidades</h2>
     </div>
     <table class="w-full text-sm">
@@ -159,6 +250,9 @@
     </table>
   </div>
 
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-1 gap-5 mb-5">
   <div class="card overflow-hidden p-0">
     <div class="px-4 py-3 border-b border-gray-100">
       <h2 class="text-sm font-semibold text-gray-700">Últimos Proyectos</h2>
@@ -191,6 +285,10 @@
 <script>
   const ncLabels = {{ estado_labels_json|safe }};
   const ncData = {{ estado_data_json|safe }};
+  const qrLabels = {{ qr_estado_labels_json|safe }};
+  const qrData = {{ qr_estado_data_json|safe }};
+  const qrTrendLabels = {{ qr_trend_labels_json|safe }};
+  const qrTrendValues = {{ qr_trend_values_json|safe }};
   const pLabels = {{ proyecto_labels_json|safe }};
   const pData = {{ proyecto_data_json|safe }};
 
@@ -208,6 +306,54 @@
         data: ncData,
         backgroundColor: '#0f766e',
         borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 }, grid: commonGrid }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('chartQrEstados'), {
+    type: 'bar',
+    data: {
+      labels: qrLabels,
+      datasets: [{
+        label: 'QyR',
+        data: qrData,
+        backgroundColor: '#d97706',
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 }, grid: commonGrid }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('chartQrTendencia'), {
+    type: 'line',
+    data: {
+      labels: qrTrendLabels,
+      datasets: [{
+        label: 'QyR',
+        data: qrTrendValues,
+        borderColor: '#d97706',
+        backgroundColor: 'rgba(217, 119, 6, 0.15)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 3,
+        pointHoverRadius: 5,
       }]
     },
     options: {

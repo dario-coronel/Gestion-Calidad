@@ -105,3 +105,28 @@ class NCRoleWorkflowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'El punto seleccionado no corresponde a la norma elegida.')
+
+    def test_crear_punto_reactiva_duplicado_eliminado(self):
+        self.punto_norma.eliminado = True
+        self.punto_norma.actualizado_por = self.calidad
+        self.punto_norma.save(update_fields=['eliminado', 'actualizado_por', 'actualizado_en'])
+
+        self.client.login(username='nc_calidad', password='Calidad1234!')
+        response = self.client.post(reverse('nc:punto_crear', args=[self.norma.pk]), {
+            'codigo': '8.7',
+            'descripcion': 'Control de las salidas no conformes',
+            'activo': 'on',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.punto_norma.refresh_from_db()
+        self.assertFalse(self.punto_norma.eliminado)
+        self.assertTrue(self.punto_norma.activo)
+        self.assertEqual(
+            PuntoNormaNC.objects.filter(
+                norma=self.norma,
+                codigo='8.7',
+                descripcion='Control de las salidas no conformes',
+            ).count(),
+            1,
+        )

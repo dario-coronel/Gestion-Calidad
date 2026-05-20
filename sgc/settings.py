@@ -145,3 +145,7 @@ ADJUNTO_TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'application/pdf', 'appli
 
 # Verificación de Eficacia: días antes de notificar
 VERIFICACION_DIAS_AVISO = 90
+
+# Tipos de reclamo que deben tener NC asociada en QyR (opcional).
+# Valores esperados: claves de TipoReclamo (ej. 'calidad_producto', 'documentacion').
+QR_REQUIRED_NC_TYPES = env.list('QR_REQUIRED_NC_TYPES', default=[])

@@ -7,6 +7,7 @@ from django.template.loader import render_to_string
 
 from .models import QuejaReclamo, EstadoQR
 from .forms import QuejaReclamoForm, AdjuntoQRForm
+from apps.om.models import OportunidadMejora, EstadoOM, ClasificacionOM
 
 
 COLORES_ESTADO = {
@@ -20,7 +21,9 @@ COLORES_ESTADO = {
 
 @login_required
 def lista(request):
-    qs = QuejaReclamo.objects.filter(eliminado=False).select_related('responsable')
+    qs = QuejaReclamo.objects.filter(eliminado=False).select_related(
+        'responsable', 'sector', 'nc_relacionada', 'om_asociada'
+    )
 
     estado = request.GET.get('estado', '')
     prioridad = request.GET.get('prioridad', '')
@@ -83,7 +86,11 @@ def crear(request):
 
 @login_required
 def detalle(request, pk):
-    qr = get_object_or_404(QuejaReclamo, pk=pk, eliminado=False)
+    qr = get_object_or_404(
+        QuejaReclamo.objects.select_related('nc_relacionada', 'om_asociada', 'responsable', 'sector'),
+        pk=pk,
+        eliminado=False,
+    )
     puede_gestionar = request.user.has_perm('qr.change_quejareclamo')
     puede_editar = (
         puede_gestionar
@@ -108,7 +115,24 @@ def detalle(request, pk):
             decision = request.POST.get('decision')
             if decision == 'aprobar':
                 qr.estado = EstadoQR.EN_SEGUIMIENTO
+                nueva_om = None
+                if not qr.om_asociada_id:
+                    nueva_om = OportunidadMejora.objects.create(
+                        fecha=timezone.now().date(),
+                        sector=qr.sector,
+                        responsable=qr.responsable,
+                        descripcion=f'OM derivada de {qr.folio}: {qr.descripcion}',
+                        problema_a_mejorar=qr.descripcion,
+                        beneficio_potencial=qr.prioridad,
+                        clasificacion=ClasificacionOM.CALIDAD,
+                        estado=EstadoOM.APROBADA,
+                        creado_por=request.user,
+                        actualizado_por=request.user,
+                    )
+                    qr.om_asociada = nueva_om
                 msg = 'Reclamo aceptado por Calidad y pasado a seguimiento.'
+                if nueva_om:
+                    msg += f' Se creó la OM {nueva_om.folio} asociada al reclamo.'
             elif decision == 'rechazar':
                 qr.estado = EstadoQR.RECHAZADO
                 msg = 'Reclamo rechazado por Calidad.'
@@ -120,7 +144,7 @@ def detalle(request, pk):
 
             if msg:
                 qr.actualizado_por = request.user
-                qr.save(update_fields=['estado', 'actualizado_por', 'actualizado_en'])
+                qr.save(update_fields=['estado', 'om_asociada', 'actualizado_por', 'actualizado_en'])
                 messages.success(request, msg)
                 return redirect('qr:detalle', pk=pk)
 

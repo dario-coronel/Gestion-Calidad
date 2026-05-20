@@ -19,6 +19,7 @@
         <div><dt class="form-label mb-0.5">Tipo</dt><dd class="text-gray-800">{{ qr.get_tipo_reclamo_display }}</dd></div>
         <div><dt class="form-label mb-0.5">Sector de origen</dt><dd class="text-gray-800">{{ qr.sector.nombre|default:"—" }}</dd></div>
         <div><dt class="form-label mb-0.5">Cliente / Nro Pedido</dt><dd class="text-gray-800">{{ qr.id_cliente_pedido|default:"—" }}</dd></div>
+        <div><dt class="form-label mb-0.5">ID Muestra / LOTE</dt><dd class="text-gray-800">{{ qr.id_muestra_lote|default:"—" }}</dd></div>
         <div><dt class="form-label mb-0.5">Fecha</dt><dd class="text-gray-800">{{ qr.fecha|date:"d/m/Y" }}</dd></div>
         <div><dt class="form-label mb-0.5">Prioridad</dt><dd class="text-gray-800">{{ qr.get_prioridad_display }}</dd></div>
         <div><dt class="form-label mb-0.5">Clasificación</dt><dd class="text-gray-800">{{ qr.clasificacion|default:"—" }}</dd></div>
@@ -30,9 +31,23 @@
         <div>
           <dt class="form-label mb-0.5">NC relacionada</dt>
           <dd class="text-gray-800">
-            {% with nc=qr.nc_relacionadas.first %}
-              {% if nc %}<a href="{% url 'nc:detalle' nc.pk %}" class="text-teal-700 hover:underline font-medium">{{ nc.folio }}</a>{% else %}—{% endif %}
-            {% endwith %}
+            {% if qr.nc_relacionada %}
+              <a href="{% url 'nc:detalle' qr.nc_relacionada.pk %}" class="text-teal-700 hover:underline font-medium">{{ qr.nc_relacionada.folio }}</a>
+            {% else %}
+              {% with nc=qr.nc_relacionadas.first %}
+                {% if nc %}<a href="{% url 'nc:detalle' nc.pk %}" class="text-teal-700 hover:underline font-medium">{{ nc.folio }}</a>{% else %}—{% endif %}
+              {% endwith %}
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="form-label mb-0.5">OM asociada</dt>
+          <dd class="text-gray-800">
+            {% if qr.om_asociada %}
+              <a href="{% url 'om:detalle' qr.om_asociada.pk %}" class="text-teal-700 hover:underline font-medium">{{ qr.om_asociada.folio }}</a>
+            {% else %}
+              —
+            {% endif %}
           </dd>
         </div>
       </dl>
@@ -43,7 +58,7 @@
       </div>
     </div>
 
-    {% if qr.detalle_visita_cliente or qr.acciones_a_tomar or qr.resultado %}
+    {% if qr.detalle_visita_cliente or qr.acciones_a_tomar or qr.acciones_a_tomar_correctivas or qr.resultado %}
     <div class="card space-y-4">
       <h3 class="text-sm font-semibold text-gray-700 border-b pb-2">Gestión y Seguimiento</h3>
       {% if qr.detalle_visita_cliente %}
@@ -56,6 +71,12 @@
       <div>
         <dt class="form-label mb-0.5">Acciones a tomar</dt>
         <dd class="text-sm text-gray-800 whitespace-pre-line bg-yellow-50 rounded p-3">{{ qr.acciones_a_tomar }}</dd>
+      </div>
+      {% endif %}
+      {% if qr.acciones_a_tomar_correctivas %}
+      <div>
+        <dt class="form-label mb-0.5">Acciones a tomar correctivas</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line bg-orange-50 rounded p-3">{{ qr.acciones_a_tomar_correctivas }}</dd>
       </div>
       {% endif %}
       {% if qr.resultado %}

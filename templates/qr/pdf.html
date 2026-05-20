@@ -62,6 +62,10 @@
       <td class="val">{{ qr.quien_recibe|default:"—" }}</td>
     </tr>
     <tr>
+      <td class="lbl">ID Muestra / LOTE</td>
+      <td class="val" colspan="3">{{ qr.id_muestra_lote|default:"—" }}</td>
+    </tr>
+    <tr>
       <td class="lbl">Tiempo de resolución</td>
       <td class="val">{% if qr.dias_resolucion %}{{ qr.dias_resolucion }} días{% else %}—{% endif %}</td>
       <td class="lbl">Fecha de cierre</td>
@@ -71,14 +75,18 @@
       <td class="lbl">Envío de mail al cliente</td>
       <td class="val" colspan="3">{% if qr.envio_mail %}Sí{% else %}No{% endif %}</td>
     </tr>
-    {% with nc=qr.nc_relacionadas.first %}
-    {% if nc %}
+    {% if qr.nc_relacionada %}
     <tr>
       <td class="lbl">NC relacionada</td>
-      <td class="val" colspan="3">{{ nc.folio }}</td>
+      <td class="val" colspan="3">{{ qr.nc_relacionada.folio }}</td>
     </tr>
     {% endif %}
-    {% endwith %}
+    {% if qr.om_asociada %}
+    <tr>
+      <td class="lbl">OM asociada</td>
+      <td class="val" colspan="3">{{ qr.om_asociada.folio }}</td>
+    </tr>
+    {% endif %}
     <tr>
       <td class="lbl">Creado por</td>
       <td class="val">{{ qr.creado_por.get_full_name|default:"—" }}</td>
@@ -95,7 +103,7 @@
 </div>
 
 {# ── SECCIÓN 3: Gestión y Seguimiento ── #}
-{% if qr.detalle_visita_cliente or qr.acciones_a_tomar or qr.resultado %}
+{% if qr.detalle_visita_cliente or qr.acciones_a_tomar or qr.acciones_a_tomar_correctivas or qr.resultado %}
 <div class="section">
   <div class="section-title">3. Gestión y Seguimiento</div>
   {% if qr.detalle_visita_cliente %}
@@ -105,6 +113,10 @@
   {% if qr.acciones_a_tomar %}
   <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Acciones a tomar</p>
   <div class="campo-texto" style="margin-bottom:10px">{{ qr.acciones_a_tomar }}</div>
+  {% endif %}
+  {% if qr.acciones_a_tomar_correctivas %}
+  <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Acciones a tomar correctivas</p>
+  <div class="campo-texto" style="margin-bottom:10px">{{ qr.acciones_a_tomar_correctivas }}</div>
   {% endif %}
   {% if qr.resultado %}
   <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Resultado</p>

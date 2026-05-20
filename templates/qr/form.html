@@ -31,6 +31,25 @@
           {{ form.fecha }}
         </div>
       </div>
+      <div id="id_muestra_lote_wrapper" class="grid grid-cols-1 gap-5">
+        <div>
+          <label class="form-label">ID Muestra / LOTE</label>
+          {{ form.id_muestra_lote }}
+          {% if form.lotes_sugeridos %}
+          <datalist id="lotes_sugeridos">
+            {% for lote in form.lotes_sugeridos %}
+            <option value="{{ lote }}"></option>
+            {% endfor %}
+          </datalist>
+          {% endif %}
+          <p id="id_muestra_lote_help" class="text-xs text-gray-500 mt-1">
+            Completá este campo cuando el tipo sea Calidad del Producto en Destino.
+          </p>
+          {% if form.id_muestra_lote.errors %}
+          <p class="text-xs text-danger mt-1">{{ form.id_muestra_lote.errors|join:", " }}</p>
+          {% endif %}
+        </div>
+      </div>
       <div class="grid grid-cols-2 gap-5">
         <div>
           <label class="form-label">Prioridad *</label>
@@ -39,6 +58,16 @@
         <div>
           <label class="form-label">Clasificación</label>
           {{ form.clasificacion }}
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <label class="form-label">No Conformidad asociada</label>
+          {{ form.nc_relacionada }}
+        </div>
+        <div>
+          <label class="form-label">Oportunidad de Mejora asociada</label>
+          {{ form.om_asociada }}
         </div>
       </div>
       <div class="grid grid-cols-2 gap-5">
@@ -79,6 +108,10 @@
         {{ form.acciones_a_tomar }}
       </div>
       <div>
+        <label class="form-label">Acciones a tomar correctivas</label>
+        {{ form.acciones_a_tomar_correctivas }}
+      </div>
+      <div>
         <label class="form-label">Resultado</label>
         {{ form.resultado }}
       </div>
@@ -94,4 +127,33 @@
     </div>
   </form>
 </div>
+
+<script>
+  (function () {
+    const tipoSelect = document.getElementById('id_tipo_reclamo');
+    const loteWrapper = document.getElementById('id_muestra_lote_wrapper');
+    const loteSelect = document.getElementById('id_id_muestra_lote');
+
+    function syncMuestraLoteVisibility() {
+      if (!tipoSelect || !loteWrapper || !loteSelect) return;
+      const isCalidadProducto = tipoSelect.value === 'calidad_producto';
+      loteSelect.required = isCalidadProducto;
+      if (!isCalidadProducto && !loteSelect.value) {
+        loteSelect.value = '';
+      }
+
+      const help = document.getElementById('id_muestra_lote_help');
+      if (help) {
+        help.textContent = isCalidadProducto
+          ? 'Seleccioná o ingresá el LOTE correspondiente a la entrega.'
+          : 'Este campo se usa cuando el tipo es Calidad del Producto en Destino.';
+      }
+    }
+
+    if (tipoSelect) {
+      tipoSelect.addEventListener('change', syncMuestraLoteVisibility);
+      syncMuestraLoteVisibility();
+    }
+  })();
+</script>
 {% endblock %}

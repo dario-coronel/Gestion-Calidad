@@ -34,6 +34,7 @@ class QuejaReclamo(ModeloBase):
         related_name='qr_responsable'
     )
     id_cliente_pedido = models.CharField(max_length=100)
+    id_muestra_lote = models.CharField('ID Muestra / LOTE', max_length=100, blank=True)
     tipo_reclamo = models.CharField(max_length=30, choices=TipoReclamo)
     descripcion = models.TextField()
     prioridad = models.CharField(
@@ -44,11 +45,22 @@ class QuejaReclamo(ModeloBase):
     clasificacion = models.CharField(max_length=100, blank=True)
     estado = models.CharField(max_length=20, choices=EstadoQR, default=EstadoQR.BORRADOR)
     dias_resolucion = models.PositiveIntegerField(null=True, blank=True)
+    nc_relacionada = models.ForeignKey(
+        'nc.NoConformidad', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='qrs_relacionados',
+        verbose_name='NC asociada'
+    )
+    om_asociada = models.ForeignKey(
+        'om.OportunidadMejora', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='qrs_relacionados',
+        verbose_name='OM asociada'
+    )
 
     # Recepción y gestión
     quien_recibe = models.CharField('Quién recibe la queja', max_length=200, blank=True)
     detalle_visita_cliente = models.TextField('Detalle visita al cliente', blank=True)
     acciones_a_tomar = models.TextField('Acciones a tomar', blank=True)
+    acciones_a_tomar_correctivas = models.TextField('Acciones a tomar correctivas', blank=True)
     resultado = models.TextField('Resultado', blank=True)
     envio_mail = models.BooleanField('Envío de mail al cliente', default=False)
     fecha_cierre = models.DateField('Fecha de cierre', null=True, blank=True)

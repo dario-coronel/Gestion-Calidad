@@ -2,6 +2,7 @@ from datetime import date
 
 from django.test import TestCase
 from django.urls import reverse
+from django.core.management import call_command
 
 from apps.accounts.models import Rol, Usuario
 from apps.core.models import Sector
@@ -12,6 +13,7 @@ from apps.proyectos.models import EstadoProyecto, OrigenProyecto, Proyecto
 
 class ProyectoWorkflowTests(TestCase):
     def setUp(self):
+        call_command('seed_grupos', solo_grupos=True, verbosity=0)
         self.calidad = Usuario.objects.create_user(
             username='proy_calidad',
             password='Calidad1234!',

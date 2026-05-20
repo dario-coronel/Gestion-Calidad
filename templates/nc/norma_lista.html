@@ -13,8 +13,9 @@
   </div>
 
   {% if normas %}
-    <div class="rounded-lg border border-gray-200 bg-white shadow overflow-hidden">
-      <table class="w-full">
+    <div class="rounded-lg border border-gray-200 bg-white shadow">
+      <div class="table-responsive">
+        <table class="w-full">
         <thead>
           <tr class="border-b border-gray-200 bg-gray-50">
             <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-700">Norma</th>
@@ -50,6 +51,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   {% else %}
     <div class="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">

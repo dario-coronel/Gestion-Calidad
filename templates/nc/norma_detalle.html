@@ -16,7 +16,10 @@
   </div>
 
   <div class="card">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Puntos asociados</h2>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Puntos asociados</h2>
+      <a href="{% url 'nc:punto_lista_norma' norma.pk %}" class="btn-primary text-sm">Gestionar Puntos</a>
+    </div>
     <div class="space-y-2">
       {% for punto in puntos %}
         <div class="rounded-lg border border-gray-200 px-4 py-3">

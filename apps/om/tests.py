@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.core.management import call_command
 
 from apps.accounts.models import Usuario, Rol
 from apps.core.models import Sector
@@ -8,6 +9,7 @@ from apps.om.models import OportunidadMejora, EstadoOM, ClasificacionOM
 
 class OMRoleWorkflowTests(TestCase):
     def setUp(self):
+        call_command('seed_grupos', solo_grupos=True, verbosity=0)
         self.operario = Usuario.objects.create_user(
             username='om_operario',
             password='Operario1234!',
