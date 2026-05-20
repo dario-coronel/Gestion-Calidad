@@ -144,7 +144,7 @@
 
     {# Botón cerrar en mobile #}
     <div class="md:hidden px-4 py-4 border-t border-white/10 flex justify-end">
-      <button onclick="document.getElementById('sidebar').classList.add('hidden'); document.getElementById('sidebar-overlay').classList.add('hidden')" 
+      <button type="button" onclick="closeSidebar()" aria-label="Cerrar menú lateral"
               class="text-white hover:text-white/70 transition-colors">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -164,7 +164,7 @@
   </aside>
 
   {# Overlay móvil para cerrar sidebar #}
-  <div id="sidebar-overlay" class="hidden md:hidden fixed inset-0 bg-black/50 z-40" onclick="document.getElementById('sidebar').classList.add('hidden'); this.classList.add('hidden')"></div>
+  <div id="sidebar-overlay" class="hidden md:hidden fixed inset-0 bg-black/50 z-40" onclick="closeSidebar()"></div>
 
   {# ── CONTENIDO PRINCIPAL ───────────────────────────────────── #}
   <div class="flex-1 flex flex-col w-full md:flex-1 min-h-screen overflow-auto">
@@ -173,7 +173,7 @@
     <header class="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 py-3">
       <div class="flex items-center gap-3">
         {# Botón hamburger mobile #}
-        <button id="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('hidden'); document.getElementById('sidebar-overlay').classList.toggle('hidden')" class="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+        <button id="menu-btn" type="button" onclick="toggleSidebar()" aria-label="Abrir menú lateral" aria-controls="sidebar" aria-expanded="false" class="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
@@ -254,7 +254,7 @@
 
   {# ── ESTILOS UTILITARIOS ───────────────────────────────────── #}
   <style>
-    .nav-link { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.5rem; md:padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.15s; font-size: 0.8125rem; }
+    .nav-link { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.5rem; border-radius: 0.5rem; transition: background-color 0.15s; font-size: 0.8125rem; }
     .nav-link svg { flex-shrink: 0; }
     @media (min-width: 768px) { .nav-link { padding: 0.5rem 0.75rem; } }
     .btn-primary { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: #0f766e; color: white; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: background-color 0.15s; min-height: 2.5rem; }
@@ -299,6 +299,34 @@
   </style>
 
   <script>
+    function setSidebarExpanded(expanded) {
+      var menuBtn = document.getElementById('menu-btn');
+      if (menuBtn) menuBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    }
+
+    function closeSidebar() {
+      var sidebar = document.getElementById('sidebar');
+      var overlay = document.getElementById('sidebar-overlay');
+      if (sidebar) sidebar.classList.add('hidden');
+      if (overlay) overlay.classList.add('hidden');
+      setSidebarExpanded(false);
+    }
+
+    function toggleSidebar() {
+      var sidebar = document.getElementById('sidebar');
+      var overlay = document.getElementById('sidebar-overlay');
+      if (!sidebar || !overlay) return;
+
+      var isHidden = sidebar.classList.contains('hidden');
+      if (isHidden) {
+        sidebar.classList.remove('hidden');
+        overlay.classList.remove('hidden');
+        setSidebarExpanded(true);
+      } else {
+        closeSidebar();
+      }
+    }
+
     // ---- Toasts ----
     function showToast(text, level) {
       var colors = {
