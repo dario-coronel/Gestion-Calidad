@@ -1,0 +1,66 @@
+site_name: SGC - Sistema de Gestión de Calidad
+site_description: Manual de uso del Sistema de Gestión de Calidad de EDP Agro
+site_author: EDP Agro IT
+site_url: https://dario-coronel.github.io/Gestion-Calidad/
+
+repo_name: Gestion-Calidad
+repo_url: https://github.com/dario-coronel/Gestion-Calidad
+
+theme:
+  name: material
+  language: es
+  locale: es_ES
+  logo: img/logo.png
+  favicon: img/favicon.ico
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+
+palette:
+  - scheme: default
+    primary: blue
+    accent: cyan
+    toggle:
+      icon: material/brightness-7
+      name: Cambiar a modo oscuro
+  - scheme: slate
+    primary: blue
+    accent: cyan
+    toggle:
+      icon: material/brightness-4
+      name: Cambiar a modo claro
+
+markdown_extensions:
+  - pymdownx.emoji
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.details
+
+plugins:
+  - search:
+      lang: es
+
+nav:
+  - Inicio: index.md
+  - Guía Rápida: guia-rapida.md
+  - Normas y Puntos: normas-puntos.md
+  - No Conformidades: no-conformidades.md
+  - Órdenes de Mejora: ordenes-mejora.md
+  - Reportes: reportes.md
+  - FAQ: faq.md
