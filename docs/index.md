@@ -22,8 +22,11 @@ Este sistema permite gestionar de manera centralizada:
 
 - [Empezar](./guia-rapida.md) - Guía rápida para nuevos usuarios
 - [Normas y Puntos](./normas-puntos.md) - Gestión de estándares
+- [Proyectos](./proyectos.md) - Iniciativas de mejora continua
+- [Verificaciones](./verificaciones.md) - Auditorías y validación
 - [No Conformidades](./no-conformidades.md) - Reportar y seguir problemas
 - [Órdenes de Mejora](./ordenes-mejora.md) - Acciones correctivas
+- [QR y Trazabilidad](./qr-trazabilidad.md) - Códigos y seguimiento
 - [Reportes](./reportes.md) - Análisis y estadísticas
 - [FAQ](./faq.md) - Preguntas frecuentes
 

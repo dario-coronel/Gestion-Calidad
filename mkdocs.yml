@@ -59,8 +59,15 @@ plugins:
 nav:
   - Inicio: index.md
   - Guía Rápida: guia-rapida.md
-  - Normas y Puntos: normas-puntos.md
-  - No Conformidades: no-conformidades.md
-  - Órdenes de Mejora: ordenes-mejora.md
-  - Reportes: reportes.md
-  - FAQ: faq.md
+  - Gestión:
+    - Normas y Puntos: normas-puntos.md
+    - Proyectos: proyectos.md
+    - Verificaciones: verificaciones.md
+  - Procesos:
+    - No Conformidades: no-conformidades.md
+    - Órdenes de Mejora: ordenes-mejora.md
+    - QR y Trazabilidad: qr-trazabilidad.md
+  - Análisis:
+    - Reportes: reportes.md
+  - Ayuda:
+    - FAQ: faq.md
