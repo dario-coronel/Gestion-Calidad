@@ -30,19 +30,19 @@
   {% block extra_head %}{% endblock %}
 </head>
 
-<body class="h-full flex" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body class="h-full flex flex-col md:flex" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
-  {# ── SIDEBAR ──────────────────────────────────────────────── #}
-  <aside class="w-56 min-h-screen flex flex-col bg-sidebar text-white shrink-0">
+  {# ── SIDEBAR (colapsable en mobile) ──────────────────────── #}
+  <aside id="sidebar" class="hidden md:flex w-full md:w-56 md:min-h-screen md:flex-col bg-sidebar text-white md:shrink-0 fixed md:static top-0 left-0 z-50 md:z-0">
 
     {# Logo / título #}
-    <div class="px-4 py-4 border-b border-white/10">
-      <img src="{% static 'img/logo_edp.jpg' %}" alt="EDP Agro" class="h-16 w-full object-contain mb-2">
-      <p class="text-center text-xs text-white/40 tracking-widest uppercase font-semibold">Gestión de Calidad</p>
+    <div class="px-4 py-3 md:py-4 border-b border-white/10">
+      <img src="{% static 'img/logo_edp.jpg' %}" alt="EDP Agro" class="h-12 md:h-16 w-full object-contain mb-1 md:mb-2">
+      <p class="text-center text-[10px] md:text-xs text-white/40 tracking-widest uppercase font-semibold">Gestión de Calidad</p>
     </div>
 
     {# Navegación #}
-    <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
+    <nav class="flex-1 px-2 md:px-3 py-3 md:py-4 space-y-0.5 md:space-y-1 text-xs md:text-sm overflow-y-auto">
       {% with request.resolver_match.app_name as active_app %}
 
       <a href="{% url 'dashboard:index' %}"
@@ -142,6 +142,16 @@
       {% endwith %}
     </nav>
 
+    {# Botón cerrar en mobile #}
+    <div class="md:hidden px-4 py-4 border-t border-white/10 flex justify-end">
+      <button onclick="document.getElementById('sidebar').classList.add('hidden'); document.getElementById('sidebar-overlay').classList.add('hidden')" 
+              class="text-white hover:text-white/70 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
     {# Usuario #}
     <div class="px-4 py-4 border-t border-white/10 text-xs text-white/60">
       <p class="font-medium text-white truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
@@ -153,14 +163,25 @@
     </div>
   </aside>
 
+  {# Overlay móvil para cerrar sidebar #}
+  <div id="sidebar-overlay" class="hidden md:hidden fixed inset-0 bg-black/50 z-40" onclick="document.getElementById('sidebar').classList.add('hidden'); this.classList.add('hidden')"></div>
+
   {# ── CONTENIDO PRINCIPAL ───────────────────────────────────── #}
-  <div class="flex-1 flex flex-col min-h-screen overflow-auto">
+  <div class="flex-1 flex flex-col w-full md:flex-1 min-h-screen overflow-auto">
 
     {# Topbar #}
-    <header class="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center justify-between px-6 py-3">
-      <h1 class="text-base font-semibold text-gray-800">{% block page_title %}{% endblock %}</h1>
+    <header class="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 py-3">
+      <div class="flex items-center gap-3">
+        {# Botón hamburger mobile #}
+        <button id="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('hidden'); document.getElementById('sidebar-overlay').classList.toggle('hidden')" class="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+        <h1 class="text-sm md:text-base font-semibold text-gray-800">{% block page_title %}{% endblock %}</h1>
+      </div>
 
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 md:gap-4">
         {# Campana de notificaciones #}
         <div class="relative" id="notif-widget">
           <button id="notif-btn"
@@ -191,7 +212,7 @@
            target="_blank"
            rel="noopener noreferrer"
            title="Documentación y Ayuda"
-           class="inline-flex items-center gap-2 p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+           class="hidden sm:inline-flex items-center gap-2 p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747S17.5 6.253 12 6.253z"/>
@@ -200,11 +221,11 @@
         </a>
 
         {# Chip usuario #}
-        <div class="flex items-center gap-2 text-sm text-gray-700">
-          <div class="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold uppercase">
+        <div class="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-700">
+          <div class="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold uppercase flex-shrink-0">
             {{ request.user.username|slice:":1" }}
           </div>
-          <span class="hidden sm:block font-medium">{{ request.user.get_full_name|default:request.user.username }}</span>
+          <span class="hidden md:block font-medium">{{ request.user.get_full_name|default:request.user.username }}</span>
         </div>
       </div>
     </header>
@@ -226,20 +247,23 @@
     {% endif %}
 
     {# Contenido de la página #}
-    <main class="flex-1 px-6 py-6">
+    <main class="flex-1 px-4 md:px-6 py-4 md:py-6">
       {% block content %}{% endblock %}
     </main>
   </div>
 
   {# ── ESTILOS UTILITARIOS ───────────────────────────────────── #}
   <style>
-    .nav-link { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.15s; font-size: 0.8125rem; }
-    .btn-primary { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: #0f766e; color: white; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: background-color 0.15s; }
+    .nav-link { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.5rem; md:padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.15s; font-size: 0.8125rem; }
+    .nav-link svg { flex-shrink: 0; }
+    @media (min-width: 768px) { .nav-link { padding: 0.5rem 0.75rem; } }
+    .btn-primary { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: #0f766e; color: white; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: background-color 0.15s; min-height: 2.5rem; }
     .btn-primary:hover { background-color: #0d9488; }
-    .btn-secondary { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: white; color: #374151; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: background-color 0.15s; }
+    .btn-secondary { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: white; color: #374151; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: background-color 0.15s; min-height: 2.5rem; }
     .btn-secondary:hover { background-color: #f9fafb; }
-    .btn-danger { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: #dc2626; color: white; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; }
-    .form-input { display: block; width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; color: #111827; background-color: white; transition: border-color 0.15s, box-shadow 0.15s; }
+    .btn-danger { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; background-color: #dc2626; color: white; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; min-height: 2.5rem; }
+    .form-input { display: block; width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; color: #111827; background-color: white; transition: border-color 0.15s, box-shadow 0.15s; min-height: 2.5rem; }
+    @media (max-width: 640px) { .form-input { font-size: 16px; padding: 0.75rem; } }
     .form-input:focus { outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,0.12); }
     .form-label { display: block; font-size: 0.8125rem; font-weight: 500; color: #374151; margin-bottom: 0.375rem; }
     .card { background-color: white; border-radius: 0.75rem; border: 1px solid #e5e7eb; padding: 1.25rem; }
