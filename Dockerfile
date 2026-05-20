@@ -23,8 +23,12 @@ RUN apt-get update && apt-get install -y \
     shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/
+COPY requirements.txt requirements-docs.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir gunicorn psycopg2-binary
+RUN pip install --no-cache-dir -r requirements-docs.txt
 
 COPY . /app/
+
+# Construir la documentación MkDocs estática
+RUN mkdocs build --config-file /app/mkdocs.yml --site-dir /app/docs_site

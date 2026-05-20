@@ -28,3 +28,6 @@ media/
 
 # Streamlit
 .streamlit/
+
+# MkDocs build output (generado en tiempo de build/runtime)
+docs_site/
