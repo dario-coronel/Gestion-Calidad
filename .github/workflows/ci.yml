@@ -29,3 +29,31 @@ jobs:
 
       - name: Run tests
         run: python manage.py test -v 2
+
+  docs-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-docs.txt
+
+      - name: Build docs in strict mode
+        run: |
+          mkdocs build --strict
+
+      - name: Validate docs without repository access UI
+        run: |
+          if grep -RInE 'title="Ir al repositorio"|md-header__source|md-nav__source|href="https://github.com/dario-coronel/Gestion-Calidad"' docs_site --include='*.html'; then
+            echo "Repository access UI/link found in generated docs."
+            exit 1
+          fi

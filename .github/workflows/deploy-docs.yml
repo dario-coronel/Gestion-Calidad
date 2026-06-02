@@ -36,12 +36,19 @@ jobs:
 
       - name: Build documentation
         run: |
-          mkdocs build
+          mkdocs build --strict
+
+      - name: Validate docs without repository access UI
+        run: |
+          if grep -RInE 'title="Ir al repositorio"|md-header__source|md-nav__source|href="https://github.com/dario-coronel/Gestion-Calidad"' docs_site --include='*.html'; then
+            echo "Repository access UI/link found in generated docs."
+            exit 1
+          fi
 
       - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v2
         with:
-          path: site
+          path: docs_site
 
   deploy:
     needs: build
