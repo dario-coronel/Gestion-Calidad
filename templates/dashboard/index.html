@@ -6,12 +6,12 @@
 {% block content %}
 <div class="card mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
   <div>
-    <p class="text-xs uppercase tracking-wider text-gray-400">Análisis de Quejas y Reclamos</p>
+    <p class="text-xs uppercase tracking-wider text-gray-400">Análisis de Quejas, Reclamos y Oportunidades de Mejora</p>
     <h2 class="text-lg font-semibold text-gray-800">{{ qr_period_label }}</h2>
   </div>
   <form method="get" class="flex flex-wrap items-end gap-3">
     <div>
-      <label class="form-label">Período QyR</label>
+      <label class="form-label">Período QyR y OM</label>
       <select name="period" class="form-input min-w-48">
         <option value="30d" {% if qr_period == '30d' %}selected{% endif %}>Últimos 30 días</option>
         <option value="90d" {% if qr_period == '90d' %}selected{% endif %}>Últimos 90 días</option>
@@ -61,7 +61,11 @@
   </div>
   <div class="card">
     <p class="text-xs uppercase tracking-wider text-gray-400">QyR Días Promedio</p>
+    {% if kpi_qr_dias_promedio is not None %}
     <p class="text-3xl font-bold text-primary mt-1">{{ kpi_qr_dias_promedio }}</p>
+    {% else %}
+    <p class="text-3xl font-bold text-gray-500 mt-1">N/D</p>
+    {% endif %}
   </div>
   <div class="card">
     <p class="text-xs uppercase tracking-wider text-gray-400">Proyectos Activos</p>
@@ -71,9 +75,21 @@
     <p class="text-xs uppercase tracking-wider text-gray-400">Proyectos Finalizados</p>
     <p class="text-3xl font-bold text-success mt-1">{{ kpi_proyectos_finalizados }}</p>
   </div>
+  <div class="card">
+    <p class="text-xs uppercase tracking-wider text-gray-400">Total OM</p>
+    <p class="text-3xl font-bold text-gray-800 mt-1">{{ kpi_total_om }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs uppercase tracking-wider text-gray-400">OM Abiertas</p>
+    <p class="text-3xl font-bold text-warning mt-1">{{ kpi_om_abiertas }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs uppercase tracking-wider text-gray-400">OM Cerradas</p>
+    <p class="text-3xl font-bold text-success mt-1">{{ kpi_om_cerradas }}</p>
+  </div>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5">
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-5">
   <div class="card">
     <h2 class="text-sm font-semibold text-gray-700 mb-3">No Conformidades por Estado</h2>
     <div class="h-72">
@@ -85,6 +101,13 @@
     <h2 class="text-sm font-semibold text-gray-700 mb-3">Quejas y Reclamos por Estado</h2>
     <div class="h-72">
       <canvas id="chartQrEstados"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="text-sm font-semibold text-gray-700 mb-3">Oportunidades de Mejora por Estado</h2>
+    <div class="h-72">
+      <canvas id="chartOmEstados"></canvas>
     </div>
   </div>
 </div>
@@ -256,7 +279,7 @@
 
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-1 gap-5 mb-5">
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5">
   <div class="card overflow-hidden p-0">
     <div class="px-4 py-3 border-b border-gray-100">
       <h2 class="text-sm font-semibold text-gray-700">Últimos Proyectos</h2>
@@ -286,6 +309,38 @@
     </table>
     </div>
   </div>
+
+  <div class="card overflow-hidden p-0">
+    <div class="px-4 py-3 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-700">Últimas Oportunidades de Mejora</h2>
+    </div>
+    <div class="table-responsive">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-4 py-2 text-left">Folio</th>
+          <th class="px-4 py-2 text-left">Sector</th>
+          <th class="px-4 py-2 text-left">Estado</th>
+          <th class="px-4 py-2 text-left">Fecha</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for om in ultimas_om %}
+        <tr>
+          <td class="px-4 py-2 font-mono font-semibold">
+            <a href="{% url 'om:detalle' om.pk %}" class="hover:text-primary hover:underline">{{ om.folio }}</a>
+          </td>
+          <td class="px-4 py-2">{{ om.sector.nombre|default:"—" }}</td>
+          <td class="px-4 py-2">{{ om.get_estado_display }}</td>
+          <td class="px-4 py-2">{{ om.fecha|date:"d/m/Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Sin registros</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -297,6 +352,8 @@
   const qrTrendValues = {{ qr_trend_values_json|safe }};
   const pLabels = {{ proyecto_labels_json|safe }};
   const pData = {{ proyecto_data_json|safe }};
+  const omLabels = {{ om_estado_labels_json|safe }};
+  const omData = {{ om_estado_data_json|safe }};
 
   const commonGrid = {
     color: '#e5e7eb',
@@ -333,6 +390,28 @@
         label: 'QyR',
         data: qrData,
         backgroundColor: '#d97706',
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 }, grid: commonGrid }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('chartOmEstados'), {
+    type: 'bar',
+    data: {
+      labels: omLabels,
+      datasets: [{
+        label: 'OM',
+        data: omData,
+        backgroundColor: '#2563eb',
         borderRadius: 6,
       }]
     },

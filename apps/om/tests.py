@@ -1,9 +1,12 @@
+from datetime import date
+
 from django.test import TestCase
 from django.urls import reverse
 from django.core.management import call_command
 
 from apps.accounts.models import Usuario, Rol
 from apps.core.models import Sector
+from apps.om.forms import OportunidadMejoraForm
 from apps.om.models import OportunidadMejora, EstadoOM, ClasificacionOM
 
 
@@ -58,3 +61,19 @@ class OMRoleWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         om.refresh_from_db()
         self.assertEqual(om.estado, EstadoOM.RECHAZADA)
+
+    def test_form_edicion_muestra_fecha_guardada(self):
+        om = OportunidadMejora.objects.create(
+            fecha=date(2026, 5, 2),
+            sector=self.sector,
+            responsable=self.operario,
+            clasificacion=ClasificacionOM.CALIDAD,
+            descripcion='OM con fecha fija',
+            beneficio_potencial='media',
+            estado=EstadoOM.BORRADOR,
+            creado_por=self.operario,
+            actualizado_por=self.operario,
+        )
+
+        form = OportunidadMejoraForm(instance=om)
+        self.assertIn('value="2026-05-02"', str(form['fecha']))

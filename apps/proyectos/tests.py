@@ -8,6 +8,7 @@ from apps.accounts.models import Rol, Usuario
 from apps.core.models import Sector
 from apps.nc.models import ClasificacionNC, EstadoNC, NoConformidad
 from apps.om.models import ClasificacionOM, OportunidadMejora
+from apps.proyectos.forms import ProyectoForm
 from apps.proyectos.models import EstadoProyecto, OrigenProyecto, Proyecto
 
 
@@ -86,3 +87,20 @@ class ProyectoWorkflowTests(TestCase):
         proyecto.refresh_from_db()
         self.assertTrue(hasattr(proyecto, 'verificacion_eficacia'))
         self.assertEqual(proyecto.verificacion_eficacia.responsable, self.calidad)
+
+    def test_form_edicion_muestra_fecha_inicio_guardada(self):
+        proyecto = Proyecto.objects.create(
+            nombre='Proyecto con fecha fija',
+            sector=self.sector,
+            prioridad='media',
+            responsable=self.calidad,
+            fecha_inicio=date(2026, 5, 3),
+            dias_ejecucion=10,
+            proveedor='Interno',
+            origen=OrigenProyecto.INDEPENDIENTE,
+            creado_por=self.calidad,
+            actualizado_por=self.calidad,
+        )
+
+        form = ProyectoForm(instance=proyecto)
+        self.assertIn('value="2026-05-03"', str(form['fecha_inicio']))

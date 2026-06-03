@@ -17,7 +17,7 @@ class ProyectoForm(forms.ModelForm):
             'sector': forms.Select(attrs={'class': 'form-input'}),
             'prioridad': forms.Select(attrs={'class': 'form-input'}),
             'responsable': forms.Select(attrs={'class': 'form-input'}),
-            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'fecha_inicio': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
             'dias_ejecucion': forms.NumberInput(attrs={'class': 'form-input', 'placeholder': 'Ej: 30', 'min': 1}),
             'proveedor': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Proveedor externo o Interno'}),
             'origen': forms.Select(attrs={'class': 'form-input', 'id': 'id_origen_proyecto'}),
@@ -46,6 +46,9 @@ class ProyectoForm(forms.ModelForm):
         self.fields['om'].queryset = OportunidadMejora.objects.filter(eliminado=False).order_by('-fecha')
         self.fields['om'].required = False
         self.fields['om'].empty_label = 'Seleccionar OM...'
+        self.fields['fecha_inicio'].localize = False
+        self.fields['fecha_inicio'].widget.is_localized = False
+        self.fields['fecha_inicio'].widget.format = '%Y-%m-%d'
 
         if self.instance.pk and self.instance.nc_id:
             self.fields['nc'].queryset = self.fields['nc'].queryset | self.fields['nc'].queryset.model.objects.filter(pk=self.instance.nc_id)

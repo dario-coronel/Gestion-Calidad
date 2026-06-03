@@ -10,9 +10,19 @@
 
 El dashboard muestra:
 - **Resumen de No Conformidades (NC)** - Últimas y más críticas
-- **Órdenes de Mejora pendientes** - Seguimiento de acciones
+- **Oportunidades de Mejora (OM)** - Totales, abiertas, cerradas y últimos registros
 - **Verificaciones programadas** - Auditorías próximas
 - **Estadísticas rápidas** - Estado general del sistema
+
+### Filtro por período
+
+El selector de período del dashboard aplica a:
+- **Quejas y Reclamos (QyR)**
+- **Oportunidades de Mejora (OM)**
+
+En el KPI **QyR Días Promedio**:
+- Se calcula con la diferencia real entre fecha de alta y fecha de cierre en casos cerrados.
+- Si no hay QyR cerradas en el período seleccionado, se muestra **N/D**.
 
 ## Navegación principal
 
@@ -67,6 +77,7 @@ En la barra lateral izquierda encontrarás:
 - **Filtrar:** En tablas, puedes filtrar por columna
 - **Exportar:** Muchas vistas tienen opción de descargar datos
 - **Historial:** Los cambios quedan registrados con usuario y fecha
+- **Campos de fecha en edición:** Al editar NC, QyR, OM, Proyectos y Verificaciones se conserva la fecha guardada; solo se modifica si la cambias manualmente.
 
 ---
 

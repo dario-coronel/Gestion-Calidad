@@ -71,6 +71,26 @@ class QRRoleWorkflowTests(TestCase):
         self.assertIsNotNone(qr.om_asociada)
         self.assertTrue(OportunidadMejora.objects.filter(pk=qr.om_asociada_id).exists())
 
+    def test_form_edicion_muestra_fecha_guardada(self):
+        qr = QuejaReclamo.objects.create(
+            fecha=date(2026, 5, 1),
+            fecha_cierre=date(2026, 5, 6),
+            sector=self.sector,
+            responsable=self.operario,
+            id_cliente_pedido='CLI-123/PED-789',
+            tipo_reclamo=TipoReclamo.OTRO,
+            descripcion='Reclamo para validar fecha',
+            prioridad='media',
+            clasificacion='General',
+            estado=EstadoQR.EN_REVISION,
+            creado_por=self.operario,
+            actualizado_por=self.operario,
+        )
+
+        form = QuejaReclamoForm(instance=qr)
+        self.assertIn('value="2026-05-01"', str(form['fecha']))
+        self.assertIn('value="2026-05-06"', str(form['fecha_cierre']))
+
 
 class QRBackfillAndValidationTests(TestCase):
     def setUp(self):

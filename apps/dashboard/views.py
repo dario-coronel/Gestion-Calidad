@@ -9,6 +9,7 @@ import json
 from apps.nc.models import NoConformidad, EstadoNC
 from apps.qr.models import QuejaReclamo, EstadoQR
 from apps.proyectos.models import Proyecto, EstadoProyecto
+from apps.om.models import OportunidadMejora, EstadoOM
 
 
 @login_required
@@ -16,6 +17,7 @@ def index(request):
     nc_qs = NoConformidad.objects.filter(eliminado=False)
     qr_qs = QuejaReclamo.objects.filter(eliminado=False)
     proyectos_qs = Proyecto.objects.filter(eliminado=False)
+    om_qs = OportunidadMejora.objects.filter(eliminado=False)
 
     period = request.GET.get('period', '90d')
     hoy = timezone.localdate()
@@ -27,6 +29,7 @@ def index(request):
     }
     qr_period_start = period_options.get(period, period_options['90d'])
     qr_period_qs = qr_qs if qr_period_start is None else qr_qs.filter(fecha__gte=qr_period_start)
+    om_period_qs = om_qs if qr_period_start is None else om_qs.filter(fecha__gte=qr_period_start)
     qr_period_label = {
         '30d': 'Últimos 30 días',
         '90d': 'Últimos 90 días',
@@ -48,6 +51,11 @@ def index(request):
     proyecto_map = {item['estado']: item['total'] for item in proyecto_counts}
     proyecto_labels = [label for _, label in EstadoProyecto.choices]
     proyecto_data = [proyecto_map.get(value, 0) for value, _ in EstadoProyecto.choices]
+
+    om_estado_counts = om_period_qs.values('estado').annotate(total=Count('id'))
+    om_estado_map = {item['estado']: item['total'] for item in om_estado_counts}
+    om_estado_labels = [label for _, label in EstadoOM.choices]
+    om_estado_data = [om_estado_map.get(value, 0) for value, _ in EstadoOM.choices]
 
     qr_estado_counts = qr_period_qs.values('estado').annotate(total=Count('id'))
     qr_estado_map = {item['estado']: item['total'] for item in qr_estado_counts}
@@ -84,10 +92,18 @@ def index(request):
     abiertas = nc_qs.exclude(estado__in=[EstadoNC.CERRADA, EstadoNC.RECHAZADA]).count()
     criticas = nc_qs.filter(prioridad='critica').count()
     proyectos_activos = proyectos_qs.exclude(estado=EstadoProyecto.FINALIZADO).count()
+    om_abiertas = om_period_qs.exclude(estado__in=[EstadoOM.CERRADA, EstadoOM.RECHAZADA]).count()
     qr_abiertas = qr_period_qs.exclude(estado__in=[EstadoQR.CERRADO, EstadoQR.RECHAZADO]).count()
-    qr_dias_promedio = qr_period_qs.exclude(dias_resolucion__isnull=True).aggregate(
-        promedio=Avg('dias_resolucion')
-    )['promedio']
+
+    # Promedio real de resolución: diferencia entre fecha de alta y fecha de cierre.
+    # Si no hay fecha de cierre válida, usa el campo dias_resolucion como fallback.
+    qr_dias_resueltos = []
+    for qr in qr_period_qs.filter(estado=EstadoQR.CERRADO).only('fecha', 'fecha_cierre', 'dias_resolucion'):
+        if qr.fecha and qr.fecha_cierre and qr.fecha_cierre >= qr.fecha:
+            qr_dias_resueltos.append((qr.fecha_cierre - qr.fecha).days)
+        elif qr.dias_resolucion is not None:
+            qr_dias_resueltos.append(qr.dias_resolucion)
+    qr_dias_promedio = (sum(qr_dias_resueltos) / len(qr_dias_resueltos)) if qr_dias_resueltos else None
 
     qr_vencidas = 0
     qr_qs_para_vencimiento = qr_period_qs.exclude(estado__in=[EstadoQR.CERRADO, EstadoQR.RECHAZADO]).exclude(
@@ -130,12 +146,15 @@ def index(request):
         'kpi_total_qr': qr_period_qs.count(),
         'kpi_qr_abiertas': qr_abiertas,
         'kpi_qr_vencidas': qr_vencidas,
-        'kpi_qr_dias_promedio': round(qr_dias_promedio or 0, 1),
+        'kpi_qr_dias_promedio': round(qr_dias_promedio, 1) if qr_dias_promedio is not None else None,
         'kpi_qr_alerta_vencidas': qr_vencidas > 0,
         'qr_period': period,
         'qr_period_label': qr_period_label,
         'kpi_proyectos_activos': proyectos_activos,
         'kpi_proyectos_finalizados': proyectos_qs.filter(estado=EstadoProyecto.FINALIZADO).count(),
+        'kpi_total_om': om_period_qs.count(),
+        'kpi_om_abiertas': om_abiertas,
+        'kpi_om_cerradas': om_period_qs.filter(estado=EstadoOM.CERRADA).count(),
         'estado_labels_json': json.dumps(estado_labels),
         'estado_data_json': json.dumps(estado_data),
         'qr_estado_labels_json': json.dumps(qr_estado_labels),
@@ -144,9 +163,12 @@ def index(request):
         'qr_trend_values_json': json.dumps(qr_trend_values),
         'proyecto_labels_json': json.dumps(proyecto_labels),
         'proyecto_data_json': json.dumps(proyecto_data),
+        'om_estado_labels_json': json.dumps(om_estado_labels),
+        'om_estado_data_json': json.dumps(om_estado_data),
         'ultimas_nc': nc_qs.select_related('responsable').order_by('-fecha')[:6],
         'ultimas_qr': qr_period_qs.select_related('responsable').order_by('-fecha')[:6],
         'ultimos_proyectos': proyectos_qs.select_related('responsable').order_by('-fecha_inicio')[:6],
+        'ultimas_om': om_period_qs.select_related('responsable', 'sector').order_by('-fecha')[:6],
         'matrix_rows': matrix_rows,
         'impacto_labels': ['Muy bajo', 'Bajo', 'Moderado', 'Alto', 'Muy alto'],
     }

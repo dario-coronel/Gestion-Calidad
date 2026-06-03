@@ -26,7 +26,7 @@ class NoConformidadForm(forms.ModelForm):
             'dias_cierre', 'fecha_implementacion_accion', 'responsable_accion', 'rango_dias_reevaluacion',
         ]
         widgets = {
-            'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'fecha': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
             'sector': forms.Select(attrs={'class': 'form-input'}),
             'id_muestra_lote': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: SU-A342'}),
             'parametro_afectado': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: Humedad %'}),
@@ -57,7 +57,7 @@ class NoConformidadForm(forms.ModelForm):
                 'placeholder': 'Describí la evidencia que demuestra la implementación...'
             }),
             'dias_cierre': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': 'Ej: 15'}),
-            'fecha_implementacion_accion': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'fecha_implementacion_accion': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
             'responsable_accion': forms.Select(attrs={'class': 'form-input'}),
             'rango_dias_reevaluacion': forms.Select(attrs={'class': 'form-input'}),
         }
@@ -117,6 +117,11 @@ class NoConformidadForm(forms.ModelForm):
                 activo=True,
                 eliminado=False,
             ).order_by('codigo', 'descripcion')
+
+        for field_name in ('fecha', 'fecha_implementacion_accion'):
+            self.fields[field_name].localize = False
+            self.fields[field_name].widget.is_localized = False
+            self.fields[field_name].widget.format = '%Y-%m-%d'
 
     def clean(self):
         cleaned = super().clean()

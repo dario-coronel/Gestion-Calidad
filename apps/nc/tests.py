@@ -1,9 +1,12 @@
+from datetime import date
+
 from django.test import TestCase
 from django.urls import reverse
 from django.core.management import call_command
 
 from apps.accounts.models import Usuario, Rol
 from apps.core.models import Sector
+from apps.nc.forms import NoConformidadForm
 from apps.nc.models import NoConformidad, EstadoNC, ClasificacionNC, NormaNC, PuntoNormaNC
 
 
@@ -130,3 +133,22 @@ class NCRoleWorkflowTests(TestCase):
             ).count(),
             1,
         )
+
+    def test_form_edicion_muestra_fechas_guardadas(self):
+        nc = NoConformidad.objects.create(
+            fecha=date(2026, 5, 4),
+            fecha_implementacion_accion=date(2026, 5, 10),
+            sector=self.sector,
+            responsable=self.operario,
+            norma=self.norma,
+            punto_norma=self.punto_norma,
+            descripcion='NC para validar fecha en edición',
+            prioridad='media',
+            clasificacion=ClasificacionNC.PROCESO,
+            creado_por=self.operario,
+            actualizado_por=self.operario,
+        )
+
+        form = NoConformidadForm(instance=nc)
+        self.assertIn('value="2026-05-04"', str(form['fecha']))
+        self.assertIn('value="2026-05-10"', str(form['fecha_implementacion_accion']))

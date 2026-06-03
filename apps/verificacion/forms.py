@@ -8,7 +8,7 @@ class VerificacionForm(forms.ModelForm):
         fields = ['responsable', 'fecha_realizada', 'estado', 'resultado_descripcion', 'evidencia']
         widgets = {
             'responsable': forms.Select(attrs={'class': 'form-input'}),
-            'fecha_realizada': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'fecha_realizada': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
             'estado': forms.Select(attrs={'class': 'form-input'}),
             'resultado_descripcion': forms.Textarea(attrs={
                 'class': 'form-input', 'rows': 4,
@@ -22,3 +22,6 @@ class VerificacionForm(forms.ModelForm):
         from apps.accounts.models import Usuario
         self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
+        self.fields['fecha_realizada'].localize = False
+        self.fields['fecha_realizada'].widget.is_localized = False
+        self.fields['fecha_realizada'].widget.format = '%Y-%m-%d'

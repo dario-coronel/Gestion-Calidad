@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Rol, Usuario
 from apps.core.models import Sector
+from apps.om.models import ClasificacionOM, EstadoOM, OportunidadMejora
 from apps.qr.models import EstadoQR, QuejaReclamo, TipoReclamo
 
 
@@ -21,7 +22,7 @@ class DashboardQrKpiTests(TestCase):
         )
         self.sector, _ = Sector.objects.get_or_create(nombre='Calidad')
 
-    def _crear_qr(self, *, fecha, estado=EstadoQR.BORRADOR, dias_resolucion=10):
+    def _crear_qr(self, *, fecha, estado=EstadoQR.BORRADOR, dias_resolucion=10, fecha_cierre=None):
         return QuejaReclamo.objects.create(
             fecha=fecha,
             sector=self.sector,
@@ -33,6 +34,19 @@ class DashboardQrKpiTests(TestCase):
             clasificacion='General',
             estado=estado,
             dias_resolucion=dias_resolucion,
+            fecha_cierre=fecha_cierre,
+            creado_por=self.user,
+            actualizado_por=self.user,
+        )
+
+    def _crear_om(self, *, fecha, estado=EstadoOM.BORRADOR):
+        return OportunidadMejora.objects.create(
+            fecha=fecha,
+            sector=self.sector,
+            responsable=self.user,
+            descripcion='OM de prueba',
+            clasificacion=ClasificacionOM.CALIDAD,
+            estado=estado,
             creado_por=self.user,
             actualizado_por=self.user,
         )
@@ -41,6 +55,9 @@ class DashboardQrKpiTests(TestCase):
         hoy = timezone.localdate()
         self._crear_qr(fecha=hoy - timedelta(days=5), estado=EstadoQR.BORRADOR, dias_resolucion=3)
         self._crear_qr(fecha=hoy - timedelta(days=40), estado=EstadoQR.CERRADO, dias_resolucion=15)
+        self._crear_om(fecha=hoy - timedelta(days=3), estado=EstadoOM.BORRADOR)
+        self._crear_om(fecha=hoy - timedelta(days=1), estado=EstadoOM.CERRADA)
+        self._crear_om(fecha=hoy - timedelta(days=60), estado=EstadoOM.CERRADA)
 
         self.client.login(username='dashboard_admin', password='Admin1234!')
         response = self.client.get(reverse('dashboard:index'), {'period': '30d'})
@@ -50,6 +67,40 @@ class DashboardQrKpiTests(TestCase):
         self.assertEqual(response.context['kpi_total_qr'], 1)
         self.assertEqual(response.context['kpi_qr_abiertas'], 1)
         self.assertEqual(response.context['kpi_qr_vencidas'], 1)
+        self.assertIsNone(response.context['kpi_qr_dias_promedio'])
+        self.assertEqual(response.context['kpi_total_om'], 2)
+        self.assertEqual(response.context['kpi_om_abiertas'], 1)
+        self.assertEqual(response.context['kpi_om_cerradas'], 1)
         self.assertIn('Últimos 30 días', response.context['qr_period_label'])
         self.assertTrue(response.context['qr_trend_labels_json'])
         self.assertTrue(response.context['qr_trend_values_json'])
+        self.assertTrue(response.context['om_estado_labels_json'])
+        self.assertTrue(response.context['om_estado_data_json'])
+
+    def test_dashboard_calcula_qyr_dias_promedio_con_cierre_real_en_periodo(self):
+        hoy = timezone.localdate()
+        self._crear_qr(
+            fecha=hoy - timedelta(days=12),
+            estado=EstadoQR.CERRADO,
+            dias_resolucion=None,
+            fecha_cierre=hoy - timedelta(days=6),
+        )
+        self._crear_qr(
+            fecha=hoy - timedelta(days=8),
+            estado=EstadoQR.CERRADO,
+            dias_resolucion=None,
+            fecha_cierre=hoy - timedelta(days=4),
+        )
+        # Fuera del rango de 30d, no debe impactar el promedio para ese período.
+        self._crear_qr(
+            fecha=hoy - timedelta(days=60),
+            estado=EstadoQR.CERRADO,
+            dias_resolucion=None,
+            fecha_cierre=hoy - timedelta(days=55),
+        )
+
+        self.client.login(username='dashboard_admin', password='Admin1234!')
+        response = self.client.get(reverse('dashboard:index'), {'period': '30d'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['kpi_qr_dias_promedio'], 5.0)

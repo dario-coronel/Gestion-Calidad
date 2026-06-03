@@ -129,6 +129,22 @@ Diariamente. Consulta [Respaldos](./index.md) para más detalles.
 
 ## Problemas Comunes
 
+### Al editar un registro, la fecha aparece vacía
+
+La fecha debe cargarse automáticamente con el valor guardado.
+
+Si la ves vacía:
+- Actualiza con **Ctrl+F5**.
+- Prueba en ventana incógnita (descarta caché/extensiones).
+- Verifica que el campo tenga formato de fecha local de tu navegador.
+
+Si persiste, reporta el **folio** (por ejemplo, QR-2026-0002) para revisar el caso puntual.
+
+### En dashboard, QyR Días Promedio muestra N/D
+
+Es el comportamiento esperado cuando no hay QyR cerradas en el período seleccionado.
+Cuando existen cerradas, se muestra el promedio en días.
+
 ### No me deja crear una NC
 
 **Posibles causas:**

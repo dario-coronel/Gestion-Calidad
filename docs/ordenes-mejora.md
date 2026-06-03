@@ -6,10 +6,12 @@ Una **Orden de Mejora (OM)** es una acción correctiva derivada de una No Confor
 
 ## Estados de una OM
 
-- **Por Ejecutar** - Asignada pero no iniciada
-- **En Ejecución** - Trabajo en progreso
-- **Por Validar** - Completada, pendiente de aprobación
-- **Validada** - Aprobada y cierre confirmado
+- **Borrador** - Carga inicial
+- **En Revisión** - Pendiente de revisión de Calidad
+- **Aprobada** - Aprobada para avanzar
+- **En Implementación** - Trabajo en curso
+- **Cerrada** - Gestión finalizada
+- **Rechazada** - Rechazada en revisión
 
 ## Crear una Orden de Mejora
 
@@ -54,7 +56,7 @@ Una **Orden de Mejora (OM)** es una acción correctiva derivada de una No Confor
 ## Flujo típico
 
 ```
-Por Ejecutar → En Ejecución → Por Validar → Validada
+Borrador → En Revisión → Aprobada → En Implementación → Cerrada
 ```
 
 ## Seguimiento de OM
@@ -76,11 +78,10 @@ Por Ejecutar → En Ejecución → Por Validar → Validada
 ## Cierre de Orden de Mejora
 
 Para cerrar una OM:
-1. Debe estar en estado "Por Validar"
-2. Proporciona evidencia de cierre (adjuntos, comentarios)
-3. El validador (supervisor) revisa y aprueba
-4. Se cambia a "Validada"
-5. Se vincula al cierre de la NC asociada
+1. Debe contar con seguimiento/evidencia suficiente.
+2. Calidad evalúa el resultado de la implementación.
+3. Se cambia a **Cerrada** cuando corresponde.
+4. Si la eficacia es no satisfactoria, puede generarse una nueva OM de seguimiento.
 
 ## Retrasos
 

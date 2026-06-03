@@ -14,7 +14,7 @@ class QuejaReclamoForm(forms.ModelForm):
             'acciones_a_tomar', 'acciones_a_tomar_correctivas', 'resultado', 'envio_mail', 'fecha_cierre',
         ]
         widgets = {
-            'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'fecha': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
             'sector': forms.Select(attrs={'class': 'form-input'}),
             'id_cliente_pedido': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: CLI-001 / PED-2026-042'}),
             'tipo_reclamo': forms.Select(attrs={'class': 'form-input'}),
@@ -36,7 +36,7 @@ class QuejaReclamoForm(forms.ModelForm):
             'acciones_a_tomar_correctivas': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Describí las acciones correctivas...'}),
             'resultado': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Resultado final de la gestión...'}),
             'envio_mail': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-teal-600 border-gray-300 rounded'}),
-            'fecha_cierre': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'fecha_cierre': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -78,6 +78,11 @@ class QuejaReclamoForm(forms.ModelForm):
 
         self.fields['dias_resolucion'].label = 'Tiempo de respuesta (días)'
         self.fields['fecha_cierre'].required = False
+
+        for field_name in ('fecha', 'fecha_cierre'):
+            self.fields[field_name].localize = False
+            self.fields[field_name].widget.is_localized = False
+            self.fields[field_name].widget.format = '%Y-%m-%d'
 
     def clean(self):
         cleaned = super().clean()

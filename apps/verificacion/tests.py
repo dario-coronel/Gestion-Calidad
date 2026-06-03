@@ -2,15 +2,18 @@ from datetime import date
 
 from django.test import TestCase
 from django.urls import reverse
+from django.core.management import call_command
 
 from apps.accounts.models import Rol, Usuario
 from apps.core.models import Sector
 from apps.proyectos.models import OrigenProyecto, Proyecto
+from apps.verificacion.forms import VerificacionForm
 from apps.verificacion.models import EstadoVerificacion, VerificacionEficacia
 
 
 class VerificacionWorkflowTests(TestCase):
     def setUp(self):
+        call_command('seed_grupos', solo_grupos=True, verbosity=0)
         self.calidad = Usuario.objects.create_user(
             username='verif_calidad',
             password='Calidad1234!',
@@ -49,3 +52,10 @@ class VerificacionWorkflowTests(TestCase):
         self.ver.refresh_from_db()
         self.assertIsNotNone(self.ver.nc_generada)
         self.assertEqual(self.ver.nc_generada.sector, self.sector)
+
+    def test_form_edicion_muestra_fecha_realizada_guardada(self):
+        self.ver.fecha_realizada = date(2026, 7, 11)
+        self.ver.save(update_fields=['fecha_realizada', 'actualizado_en'])
+
+        form = VerificacionForm(instance=self.ver)
+        self.assertIn('value="2026-07-11"', str(form['fecha_realizada']))
