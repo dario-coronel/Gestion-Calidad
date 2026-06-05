@@ -26,6 +26,7 @@ Ejemplos:
    - **Descripción** - Detalles completos
    - **Sector** - Área afectada (Producción, Calidad, etc.)
    - **Tipo** - Categoría (Proceso, Producto, Documentación, etc.)
+   - **Origen** - Detección Directa, Queja / Reclamo, Oportunidad de Mejora, Auditoría Interna o Auditoría Externa
    - **Fecha de detección** - Cuándo se descubrió
    - **Observaciones** - Notas adicionales
 4. Haz clic en **Crear**

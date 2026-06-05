@@ -33,6 +33,8 @@ class OrigenNC(models.TextChoices):
     DIRECTO = 'directo', 'Detección Directa'
     QR = 'qr', 'Queja / Reclamo'
     OM = 'om', 'Oportunidad de Mejora'
+    AUDITORIA_INTERNA = 'aud_int', 'Auditoría Interna'
+    AUDITORIA_EXTERNA = 'aud_ext', 'Auditoría Externa'
 
 
 class TipoContaminacion(models.TextChoices):
