@@ -47,6 +47,14 @@ def _puede_gestionar_nc(user):
     return user.has_perm('nc.change_noconformidad') or _es_admin_sistema(user)
 
 
+def _es_responsable_de_nc(user, nc):
+    return bool(
+        user.is_authenticated
+        and nc.responsable_id
+        and getattr(nc.responsable, 'usuario_id', None) == user.id
+    )
+
+
 # ── lista ─────────────────────────────────────────────────────────────────────
 
 @login_required
@@ -135,7 +143,7 @@ def detalle(request, pk):
     puede_calidad = _puede_gestionar_nc(request.user)
     puede_editar = (
         puede_calidad
-        or (request.user.has_perm('nc.add_noconformidad') and nc.responsable_id == request.user.id and nc.estado == EstadoNC.BORRADOR)
+        or (request.user.has_perm('nc.add_noconformidad') and _es_responsable_de_nc(request.user, nc) and nc.estado == EstadoNC.BORRADOR)
     )
     cinco_p = getattr(nc, 'cinco_porques', None)
     # Auto-crear 5 Porqués si no existe (NCs importadas, seed, migradas, etc.)
@@ -313,7 +321,7 @@ def editar(request, pk):
     nc = get_object_or_404(NoConformidad, pk=pk, eliminado=False)
     puede_editar = (
         _puede_gestionar_nc(request.user)
-        or (request.user.has_perm('nc.add_noconformidad') and nc.responsable_id == request.user.id and nc.estado == EstadoNC.BORRADOR)
+        or (request.user.has_perm('nc.add_noconformidad') and _es_responsable_de_nc(request.user, nc) and nc.estado == EstadoNC.BORRADOR)
     )
     if not puede_editar:
         messages.error(request, 'No tenés permisos para editar esta NC.')

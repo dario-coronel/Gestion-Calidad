@@ -48,6 +48,12 @@ PERMISOS_CALIDAD_ADMIN = [
     # Sectores / Catálogos
     'core.add_sector', 'core.change_sector',
     'core.delete_sector', 'core.view_sector',
+    # Clasificaciones
+    'core.add_clasificacion', 'core.change_clasificacion',
+    'core.delete_clasificacion', 'core.view_clasificacion',
+    # Responsables
+    'core.add_responsable', 'core.change_responsable',
+    'core.delete_responsable', 'core.view_responsable',
     # Adjuntos NC
     'nc.add_adjuntonc', 'nc.change_adjuntonc',
     'nc.delete_adjuntonc', 'nc.view_adjuntonc',

@@ -39,7 +39,7 @@
   <div class="meta">
     <div><strong>Fecha:</strong> {{ qr.fecha|date:"d/m/Y" }}</div>
     <div><strong>Sector:</strong> {{ qr.sector.nombre|default:"—" }}</div>
-    <div><strong>Responsable:</strong> {{ qr.responsable.get_full_name|default:qr.responsable.username }}</div>
+    <div><strong>Responsable:</strong> {{ qr.responsable.nombre }}</div>
     <div><strong>Prioridad:</strong> {{ qr.get_prioridad_display }}</div>
     <div style="margin-top:4px;font-size:9px;color:#aaa">Impreso: {% now "d/m/Y H:i" %}</div>
   </div>

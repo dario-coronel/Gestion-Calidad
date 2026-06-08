@@ -27,15 +27,14 @@ class ProyectoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from apps.accounts.models import Usuario
-        from apps.core.models import Sector
+        from apps.core.models import Sector, Responsable
         from apps.nc.models import NoConformidad, EstadoNC
         from apps.om.models import OportunidadMejora
 
         self.fields['sector'].queryset = Sector.objects.filter(activo=True).order_by('nombre')
         self.fields['sector'].empty_label = 'Seleccionar sector...'
         self.fields['sector'].required = False
-        self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
+        self.fields['responsable'].queryset = Responsable.objects.filter(activo=True).order_by('nombre')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
         self.fields['nc'].queryset = NoConformidad.objects.filter(
             eliminado=False,

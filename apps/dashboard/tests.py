@@ -5,8 +5,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Rol, Usuario
-from apps.core.models import Sector
-from apps.om.models import ClasificacionOM, EstadoOM, OportunidadMejora
+from apps.core.models import Clasificacion, Responsable, Sector
+from apps.om.models import EstadoOM, OportunidadMejora
 from apps.qr.models import EstadoQR, QuejaReclamo, TipoReclamo
 
 
@@ -21,12 +21,17 @@ class DashboardQrKpiTests(TestCase):
             is_active=True,
         )
         self.sector, _ = Sector.objects.get_or_create(nombre='Calidad')
+        self.clasificacion_calidad, _ = Clasificacion.objects.get_or_create(nombre='Calidad')
+        self.responsable_user, _ = Responsable.objects.get_or_create(
+            usuario=self.user,
+            defaults={'nombre': 'Dashboard Admin', 'activo': True},
+        )
 
     def _crear_qr(self, *, fecha, estado=EstadoQR.BORRADOR, dias_resolucion=10, fecha_cierre=None):
         return QuejaReclamo.objects.create(
             fecha=fecha,
             sector=self.sector,
-            responsable=self.user,
+            responsable=self.responsable_user,
             id_cliente_pedido='CLI-001/PED-001',
             tipo_reclamo=TipoReclamo.OTRO,
             descripcion='Reclamo de prueba',
@@ -43,9 +48,9 @@ class DashboardQrKpiTests(TestCase):
         return OportunidadMejora.objects.create(
             fecha=fecha,
             sector=self.sector,
-            responsable=self.user,
+            responsable=self.responsable_user,
             descripcion='OM de prueba',
-            clasificacion=ClasificacionOM.CALIDAD,
+            clasificacion=self.clasificacion_calidad.nombre,
             estado=estado,
             creado_por=self.user,
             actualizado_por=self.user,

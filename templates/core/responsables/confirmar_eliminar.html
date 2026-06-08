@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar Responsable — SGC{% endblock %}
+{% block page_title %}Eliminar Responsable{% endblock %}
+
+{% block content %}
+<div class="max-w-md">
+  <div class="card space-y-4">
+    <p class="text-sm text-gray-700">
+      ¿Confirmar eliminación del responsable <strong>{{ responsable.nombre }}</strong>?
+      Esta acción no se puede deshacer.
+    </p>
+    <p class="text-xs text-red-500">
+      Si hay NCs, QRs, OMs, Proyectos o Verificaciones asociadas a este responsable, la eliminación fallará.
+    </p>
+    <div class="flex gap-3">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger">Eliminar</button>
+      </form>
+      <a href="{% url 'core:responsables_lista' %}" class="btn-secondary">Cancelar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

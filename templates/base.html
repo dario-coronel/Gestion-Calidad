@@ -30,10 +30,10 @@
   {% block extra_head %}{% endblock %}
 </head>
 
-<body class="h-full flex flex-col md:flex" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body class="min-h-screen bg-gray-50 shell-layout" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
   {# ── SIDEBAR (colapsable en mobile) ──────────────────────── #}
-  <aside id="sidebar" class="hidden md:flex w-full md:w-56 md:min-h-screen md:flex-col bg-sidebar text-white md:shrink-0 fixed md:static top-0 left-0 z-50 md:z-0">
+  <aside id="sidebar" class="hidden md:flex w-full md:w-56 md:min-h-screen md:flex-col bg-sidebar text-white md:shrink-0 md:sticky md:top-0 md:self-start md:h-screen z-50 md:z-0">
 
     {# Logo / título #}
     <div class="px-4 py-3 md:py-4 border-b border-white/10">
@@ -122,6 +122,16 @@
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M6 12h12M10 17h4"/></svg>
         Sectores
       </a>
+      <a href="{% url 'core:clasificaciones_lista' %}"
+         class="nav-link {% if active_app == 'core' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10M7 17h6M4 7h.01M4 12h.01M4 17h.01"/></svg>
+        Clasificaciones
+      </a>
+      <a href="{% url 'core:responsables_lista' %}"
+         class="nav-link {% if active_app == 'core' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V4H2v16h5m10 0v-2a4 4 0 00-8 0v2m8 0H9m8-10a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        Responsables
+      </a>
       <a href="{% url 'backups:lista' %}"
          class="nav-link {% if active_app == 'backups' %}bg-primary text-white{% else %}text-white/70 hover:bg-white/10{% endif %}">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -167,7 +177,7 @@
   <div id="sidebar-overlay" class="hidden md:hidden fixed inset-0 bg-black/50 z-40" onclick="closeSidebar()"></div>
 
   {# ── CONTENIDO PRINCIPAL ───────────────────────────────────── #}
-  <div class="flex-1 flex flex-col w-full md:flex-1 min-h-screen overflow-auto">
+  <div class="flex flex-col w-full min-h-screen overflow-auto md:min-w-0 md:col-start-2">
 
     {# Topbar #}
     <header class="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 py-3">
@@ -254,6 +264,13 @@
 
   {# ── ESTILOS UTILITARIOS ───────────────────────────────────── #}
   <style>
+    @media (min-width: 768px) {
+      .shell-layout {
+        display: grid;
+        grid-template-columns: 14rem minmax(0, 1fr);
+      }
+    }
+
     .nav-link { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.5rem; border-radius: 0.5rem; transition: background-color 0.15s; font-size: 0.8125rem; }
     .nav-link svg { flex-shrink: 0; }
     @media (min-width: 768px) { .nav-link { padding: 0.5rem 0.75rem; } }

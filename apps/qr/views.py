@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 
 from .models import QuejaReclamo, EstadoQR
 from .forms import QuejaReclamoForm, AdjuntoQRForm
-from apps.om.models import OportunidadMejora, EstadoOM, ClasificacionOM
+from apps.om.models import OportunidadMejora, EstadoOM
 
 
 COLORES_ESTADO = {
@@ -17,6 +17,14 @@ COLORES_ESTADO = {
     EstadoQR.CERRADO:        'bg-success/10 text-success',
     EstadoQR.RECHAZADO:      'bg-danger/10 text-danger',
 }
+
+
+def _es_responsable_de_qr(user, qr):
+    return bool(
+        user.is_authenticated
+        and qr.responsable_id
+        and getattr(qr.responsable, 'usuario_id', None) == user.id
+    )
 
 
 @login_required
@@ -94,7 +102,7 @@ def detalle(request, pk):
     puede_gestionar = request.user.has_perm('qr.change_quejareclamo')
     puede_editar = (
         puede_gestionar
-        or (request.user.has_perm('qr.add_quejareclamo') and qr.responsable_id == request.user.id and qr.estado == EstadoQR.BORRADOR)
+        or (request.user.has_perm('qr.add_quejareclamo') and _es_responsable_de_qr(request.user, qr) and qr.estado == EstadoQR.BORRADOR)
     )
 
     if request.method == 'POST' and puede_gestionar:
@@ -124,7 +132,7 @@ def detalle(request, pk):
                         descripcion=f'OM derivada de {qr.folio}: {qr.descripcion}',
                         problema_a_mejorar=qr.descripcion,
                         beneficio_potencial=qr.prioridad,
-                        clasificacion=ClasificacionOM.CALIDAD,
+                        clasificacion=qr.clasificacion or 'Calidad',
                         estado=EstadoOM.APROBADA,
                         creado_por=request.user,
                         actualizado_por=request.user,
@@ -162,7 +170,7 @@ def editar(request, pk):
     qr = get_object_or_404(QuejaReclamo, pk=pk, eliminado=False)
     puede_editar = (
         request.user.has_perm('qr.change_quejareclamo')
-        or (request.user.has_perm('qr.add_quejareclamo') and qr.responsable_id == request.user.id and qr.estado == EstadoQR.BORRADOR)
+        or (request.user.has_perm('qr.add_quejareclamo') and _es_responsable_de_qr(request.user, qr) and qr.estado == EstadoQR.BORRADOR)
     )
     if not puede_editar:
         messages.error(request, 'No tenés permisos para editar este reclamo.')

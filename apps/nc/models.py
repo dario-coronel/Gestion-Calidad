@@ -1,7 +1,7 @@
 ﻿from django.db import models
 from django.utils import timezone
 from datetime import timedelta
-from apps.core.models import ModeloBase, Sector
+from apps.core.models import ModeloBase, Sector, Responsable
 from django.conf import settings
 
 
@@ -69,7 +69,7 @@ class NoConformidad(ModeloBase):
         verbose_name='Sector'
     )
     responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        Responsable, on_delete=models.PROTECT,
         related_name='nc_responsable'
     )
     id_muestra_lote = models.CharField(max_length=100, blank=True)
@@ -154,7 +154,7 @@ class NoConformidad(ModeloBase):
         verbose_name='Fecha de implementación de acción correctiva'
     )
     responsable_accion = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        Responsable,
         on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='nc_responsable_accion',

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Clasificaciones — SGC{% endblock %}
+{% block page_title %}Clasificaciones{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-5">
+
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-gray-500">{{ clasificaciones.count }} clasificación{{ clasificaciones.count|pluralize:"es" }} registrada{{ clasificaciones.count|pluralize:"s" }}</p>
+    <a href="{% url 'core:clasificacion_crear' %}" class="btn-primary text-sm">+ Nueva clasificación</a>
+  </div>
+
+  <div class="card divide-y divide-gray-100">
+    {% for clasificacion in clasificaciones %}
+    <div class="flex items-center justify-between py-3 px-1">
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-medium text-gray-800">{{ clasificacion.nombre }}</span>
+        {% if not clasificacion.activo %}
+        <span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">Inactiva</span>
+        {% endif %}
+      </div>
+      <div class="flex gap-2">
+        <a href="{% url 'core:clasificacion_editar' clasificacion.pk %}" class="text-xs text-teal-700 hover:underline">Editar</a>
+        <a href="{% url 'core:clasificacion_eliminar' clasificacion.pk %}" class="text-xs text-red-500 hover:underline">Eliminar</a>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-sm text-gray-400 py-4 text-center">No hay clasificaciones registradas.</p>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

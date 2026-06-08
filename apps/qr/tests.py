@@ -6,9 +6,9 @@ from django.core.management import call_command
 from django.test.utils import override_settings
 
 from apps.accounts.models import Usuario, Rol
-from apps.core.models import Sector
+from apps.core.models import Clasificacion, Responsable, Sector
 from apps.qr.models import QuejaReclamo, EstadoQR, TipoReclamo
-from apps.om.models import OportunidadMejora, ClasificacionOM
+from apps.om.models import OportunidadMejora
 from apps.nc.models import NoConformidad, ClasificacionNC
 from apps.qr.forms import QuejaReclamoForm
 
@@ -29,18 +29,23 @@ class QRRoleWorkflowTests(TestCase):
             is_active=True,
         )
         self.sector, _ = Sector.objects.get_or_create(nombre='Comercial')
+        self.clasificacion_general, _ = Clasificacion.objects.get_or_create(nombre='General')
+        self.responsable_operario, _ = Responsable.objects.get_or_create(
+            usuario=self.operario,
+            defaults={'nombre': 'Operario QR Test', 'activo': True},
+        )
 
     def test_operario_crea_qr_en_revision(self):
         self.client.login(username='qr_operario', password='Operario1234!')
         payload = {
             'fecha': '2026-04-24',
             'sector': self.sector.pk,
-            'responsable': self.operario.pk,
+            'responsable': self.responsable_operario.pk,
             'id_cliente_pedido': 'CLI-001/PED-001',
             'tipo_reclamo': TipoReclamo.OTRO,
             'descripcion': 'Reclamo de prueba',
             'prioridad': 'media',
-            'clasificacion': 'General',
+            'clasificacion': self.clasificacion_general.nombre,
         }
         response = self.client.post(reverse('qr:crear'), payload)
         self.assertEqual(response.status_code, 302)
@@ -50,12 +55,12 @@ class QRRoleWorkflowTests(TestCase):
     def test_calidad_acepta_qr_y_pasa_a_seguimiento(self):
         qr = QuejaReclamo.objects.create(
             sector=self.sector,
-            responsable=self.operario,
+            responsable=self.responsable_operario,
             id_cliente_pedido='CLI-001/PED-001',
             tipo_reclamo=TipoReclamo.OTRO,
             descripcion='Reclamo a revisar',
             prioridad='media',
-            clasificacion='General',
+            clasificacion=self.clasificacion_general.nombre,
             estado=EstadoQR.EN_REVISION,
             creado_por=self.operario,
             actualizado_por=self.operario,
@@ -76,12 +81,12 @@ class QRRoleWorkflowTests(TestCase):
             fecha=date(2026, 5, 1),
             fecha_cierre=date(2026, 5, 6),
             sector=self.sector,
-            responsable=self.operario,
+            responsable=self.responsable_operario,
             id_cliente_pedido='CLI-123/PED-789',
             tipo_reclamo=TipoReclamo.OTRO,
             descripcion='Reclamo para validar fecha',
             prioridad='media',
-            clasificacion='General',
+            clasificacion=self.clasificacion_general.nombre,
             estado=EstadoQR.EN_REVISION,
             creado_por=self.operario,
             actualizado_por=self.operario,
@@ -101,32 +106,39 @@ class QRBackfillAndValidationTests(TestCase):
             is_active=True,
         )
         self.sector, _ = Sector.objects.get_or_create(nombre='Laboratorio')
+        self.clasificacion_general, _ = Clasificacion.objects.get_or_create(nombre='General')
+        self.clasificacion_legacy, _ = Clasificacion.objects.get_or_create(nombre='Legacy')
+        self.clasificacion_calidad, _ = Clasificacion.objects.get_or_create(nombre='Calidad')
+        self.responsable_user, _ = Responsable.objects.get_or_create(
+            usuario=self.user,
+            defaults={'nombre': 'QR Backfill User', 'activo': True},
+        )
 
     def test_backfill_qr_links_desde_nc(self):
         qr = QuejaReclamo.objects.create(
             sector=self.sector,
-            responsable=self.user,
+            responsable=self.responsable_user,
             id_cliente_pedido='CLI-888/PED-999',
             tipo_reclamo=TipoReclamo.DOCUMENTACION,
             descripcion='Reclamo legacy',
             prioridad='media',
-            clasificacion='Legacy',
+            clasificacion=self.clasificacion_legacy.nombre,
             estado=EstadoQR.EN_REVISION,
             creado_por=self.user,
             actualizado_por=self.user,
         )
         om = OportunidadMejora.objects.create(
             sector=self.sector,
-            responsable=self.user,
+            responsable=self.responsable_user,
             descripcion='OM histórica',
             beneficio_potencial='media',
-            clasificacion=ClasificacionOM.CALIDAD,
+            clasificacion=self.clasificacion_calidad.nombre,
             creado_por=self.user,
             actualizado_por=self.user,
         )
         NoConformidad.objects.create(
             sector=self.sector,
-            responsable=self.user,
+            responsable=self.responsable_user,
             descripcion='NC histórica ligada a QyR',
             prioridad='media',
             clasificacion=ClasificacionNC.PROCESO,
@@ -147,12 +159,12 @@ class QRBackfillAndValidationTests(TestCase):
         form = QuejaReclamoForm(data={
             'fecha': '2026-05-06',
             'sector': self.sector.pk,
-            'responsable': self.user.pk,
+            'responsable': self.responsable_user.pk,
             'id_cliente_pedido': 'CLI-001/PED-002',
             'tipo_reclamo': TipoReclamo.DOCUMENTACION,
             'descripcion': 'Falta documentación adjunta',
             'prioridad': 'media',
-            'clasificacion': 'General',
+            'clasificacion': self.clasificacion_general.nombre,
         })
 
         self.assertFalse(form.is_valid())
@@ -162,7 +174,7 @@ class QRBackfillAndValidationTests(TestCase):
         nc = NoConformidad.objects.create(
             fecha=date(2026, 5, 6),
             sector=self.sector,
-            responsable=self.user,
+            responsable=self.responsable_user,
             id_muestra_lote='LOTE-ABC-123',
             descripcion='NC con lote para trazabilidad',
             prioridad='media',
@@ -174,13 +186,13 @@ class QRBackfillAndValidationTests(TestCase):
         form = QuejaReclamoForm(data={
             'fecha': '2026-05-07',
             'sector': self.sector.pk,
-            'responsable': self.user.pk,
+            'responsable': self.responsable_user.pk,
             'id_cliente_pedido': 'CLI-009/PED-010',
             'tipo_reclamo': TipoReclamo.CALIDAD_PRODUCTO,
             'id_muestra_lote': nc.id_muestra_lote,
             'descripcion': 'Reclamo por desvío de calidad detectado en destino',
             'prioridad': 'alta',
-            'clasificacion': 'Calidad',
+            'clasificacion': self.clasificacion_calidad.nombre,
         })
 
         self.assertTrue(form.is_valid(), form.errors)
@@ -190,13 +202,13 @@ class QRBackfillAndValidationTests(TestCase):
         form = QuejaReclamoForm(data={
             'fecha': '2026-05-07',
             'sector': self.sector.pk,
-            'responsable': self.user.pk,
+            'responsable': self.responsable_user.pk,
             'id_cliente_pedido': 'CLI-010/PED-011',
             'tipo_reclamo': TipoReclamo.CALIDAD_PRODUCTO,
             'id_muestra_lote': '',
             'descripcion': 'Reclamo por calidad sin lote informado',
             'prioridad': 'alta',
-            'clasificacion': 'Calidad',
+            'clasificacion': self.clasificacion_calidad.nombre,
         })
 
         self.assertFalse(form.is_valid())

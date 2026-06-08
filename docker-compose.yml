@@ -11,7 +11,7 @@ services:
 
   web:
     build: .
-    command: gunicorn --bind 0.0.0.0:8002 sgc.wsgi:application
+    command: sh -c "python -m mkdocs build --config-file /app/mkdocs.yml --site-dir /app/docs_site && gunicorn --bind 0.0.0.0:8002 sgc.wsgi:application"
     volumes:
       - .:/app
     ports:

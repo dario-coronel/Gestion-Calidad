@@ -23,12 +23,18 @@ class OportunidadMejoraForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from apps.accounts.models import Usuario
-        from apps.core.models import Sector
+        from apps.core.models import Sector, Clasificacion, Responsable
         self.fields['sector'].queryset = Sector.objects.filter(activo=True).order_by('nombre')
         self.fields['sector'].empty_label = 'Seleccionar sector...'
         self.fields['sector'].required = False
-        self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
+        clasificaciones = [c.nombre for c in Clasificacion.objects.filter(activo=True).order_by('nombre')]
+        clasificacion_actual = (getattr(self.instance, 'clasificacion', '') or '').strip() if self.instance else ''
+        if clasificacion_actual and clasificacion_actual not in clasificaciones:
+            clasificaciones.append(clasificacion_actual)
+        self.fields['clasificacion'].choices = [('', 'Seleccionar clasificación...')] + [
+            (nombre, nombre) for nombre in clasificaciones
+        ]
+        self.fields['responsable'].queryset = Responsable.objects.filter(activo=True).order_by('nombre')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
         self.fields['rango_evaluacion'].empty_label = 'Sin definir'
         self.fields['fecha'].localize = False

@@ -1,7 +1,7 @@
 ﻿from django.db import models
 from django.utils import timezone
 from datetime import timedelta
-from apps.core.models import ModeloBase
+from apps.core.models import ModeloBase, Responsable
 from django.conf import settings
 
 
@@ -31,7 +31,7 @@ class VerificacionEficacia(ModeloBase):
         default=EstadoVerificacion.PENDIENTE
     )
     responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, blank=True,
+        Responsable, null=True, blank=True,
         on_delete=models.SET_NULL, related_name='verificaciones'
     )
     fecha_realizada = models.DateField(null=True, blank=True)

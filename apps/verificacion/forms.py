@@ -19,8 +19,8 @@ class VerificacionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from apps.accounts.models import Usuario
-        self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
+        from apps.core.models import Responsable
+        self.fields['responsable'].queryset = Responsable.objects.filter(activo=True).order_by('nombre')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
         self.fields['fecha_realizada'].localize = False
         self.fields['fecha_realizada'].widget.is_localized = False

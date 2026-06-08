@@ -47,7 +47,7 @@
   <div class="meta">
     <div><strong>Fecha:</strong> {{ om.fecha|date:"d/m/Y" }}</div>
     <div><strong>Sector:</strong> {{ om.sector.nombre|default:"—" }}</div>
-    <div><strong>Responsable:</strong> {{ om.responsable.get_full_name|default:om.responsable.username }}</div>
+    <div><strong>Responsable:</strong> {{ om.responsable.nombre }}</div>
     <div style="margin-top:4px;font-size:9px;color:#aaa">Impreso: {% now "d/m/Y H:i" %}</div>
   </div>
 </header>
@@ -58,7 +58,7 @@
   <table>
     <tr>
       <td class="lbl">Clasificación</td>
-      <td class="val">{{ om.get_clasificacion_display }}</td>
+      <td class="val">{{ om.clasificacion|default:"—" }}</td>
       <td class="lbl">Beneficio potencial</td>
       <td class="val">{{ om.get_beneficio_potencial_display|default:"—" }}</td>
     </tr>

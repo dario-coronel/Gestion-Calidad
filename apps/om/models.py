@@ -1,6 +1,6 @@
 ﻿from django.db import models
 from django.utils import timezone
-from apps.core.models import ModeloBase, Sector
+from apps.core.models import ModeloBase, Sector, Responsable
 from django.conf import settings
 from calendar import monthrange
 
@@ -12,14 +12,6 @@ class EstadoOM(models.TextChoices):
     EN_IMPLEMENTACION = 'en_implementacion', 'En Implementación'
     CERRADA = 'cerrada', 'Cerrada'
     RECHAZADA = 'rechazada', 'Rechazada'
-
-
-class ClasificacionOM(models.TextChoices):
-    MEJORA_PROCESO = 'mejora_proceso', 'Mejora de Proceso'
-    INNOVACION = 'innovacion', 'Innovación / Mejora Continua'
-    EFICIENCIA = 'eficiencia', 'Eficiencia Operativa'
-    CALIDAD = 'calidad', 'Calidad'
-    OTRO = 'otro', 'Otro'
 
 
 class RangoEvaluacion(models.TextChoices):
@@ -44,7 +36,7 @@ class OportunidadMejora(ModeloBase):
         verbose_name='Sector'
     )
     responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        Responsable, on_delete=models.PROTECT,
         related_name='om_responsable'
     )
     descripcion = models.TextField(help_text='Descripción de la oportunidad o sugerencia')
@@ -54,7 +46,7 @@ class OportunidadMejora(ModeloBase):
         choices=[('baja', 'Baja'), ('media', 'Media'), ('alta', 'Alta')],
         default='media'
     )
-    clasificacion = models.CharField(max_length=30, choices=ClasificacionOM)
+    clasificacion = models.CharField(max_length=100, blank=True)
     estado = models.CharField(max_length=20, choices=EstadoOM, default=EstadoOM.BORRADOR)
 
     # Seguimiento y evaluación

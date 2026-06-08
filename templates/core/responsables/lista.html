@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Responsables — SGC{% endblock %}
+{% block page_title %}Responsables{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-5">
+
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-gray-500">{{ responsables.count }} responsable{{ responsables.count|pluralize:"s" }} registrado{{ responsables.count|pluralize:"s" }}</p>
+    <a href="{% url 'core:responsable_crear' %}" class="btn-primary text-sm">+ Nuevo responsable</a>
+  </div>
+
+  <div class="card divide-y divide-gray-100">
+    {% for r in responsables %}
+    <div class="flex items-center justify-between py-3 px-1">
+      <div class="flex items-center gap-3">
+        <div>
+          <span class="text-sm font-medium text-gray-800">{{ r.nombre }}</span>
+          {% if r.email %}<span class="text-xs text-gray-400 ml-2">{{ r.email }}</span>{% endif %}
+          {% if r.usuario %}<span class="text-xs text-teal-600 ml-2">usuario: {{ r.usuario.username }}</span>{% endif %}
+        </div>
+        {% if not r.activo %}
+        <span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">Inactivo</span>
+        {% endif %}
+      </div>
+      <div class="flex gap-2">
+        <a href="{% url 'core:responsable_editar' r.pk %}" class="text-xs text-teal-700 hover:underline">Editar</a>
+        <a href="{% url 'core:responsable_eliminar' r.pk %}" class="text-xs text-red-500 hover:underline">Eliminar</a>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-sm text-gray-400 py-4 text-center">No hay responsables registrados.</p>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

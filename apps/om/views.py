@@ -19,6 +19,14 @@ COLORES_ESTADO = {
 }
 
 
+def _es_responsable_de_om(user, om):
+    return bool(
+        user.is_authenticated
+        and om.responsable_id
+        and getattr(om.responsable, 'usuario_id', None) == user.id
+    )
+
+
 @login_required
 def lista(request):
     qs = OportunidadMejora.objects.filter(eliminado=False).select_related('responsable')
@@ -85,7 +93,7 @@ def detalle(request, pk):
     puede_gestionar = request.user.has_perm('om.change_oportunidadmejora')
     puede_editar = (
         puede_gestionar
-        or (request.user.has_perm('om.add_oportunidadmejora') and om.responsable_id == request.user.id and om.estado == EstadoOM.BORRADOR)
+        or (request.user.has_perm('om.add_oportunidadmejora') and _es_responsable_de_om(request.user, om) and om.estado == EstadoOM.BORRADOR)
     )
 
     if request.method == 'POST' and puede_gestionar:
@@ -173,7 +181,7 @@ def editar(request, pk):
     om = get_object_or_404(OportunidadMejora, pk=pk, eliminado=False)
     puede_editar = (
         request.user.has_perm('om.change_oportunidadmejora')
-        or (request.user.has_perm('om.add_oportunidadmejora') and om.responsable_id == request.user.id and om.estado == EstadoOM.BORRADOR)
+        or (request.user.has_perm('om.add_oportunidadmejora') and _es_responsable_de_om(request.user, om) and om.estado == EstadoOM.BORRADOR)
     )
     if not puede_editar:
         messages.error(request, 'No tenés permisos para editar esta OM.')

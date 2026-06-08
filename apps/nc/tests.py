@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.core.management import call_command
 
 from apps.accounts.models import Usuario, Rol
-from apps.core.models import Sector
+from apps.core.models import Responsable, Sector
 from apps.nc.forms import NoConformidadForm
 from apps.nc.models import NoConformidad, EstadoNC, ClasificacionNC, NormaNC, PuntoNormaNC
 
@@ -26,6 +26,10 @@ class NCRoleWorkflowTests(TestCase):
             is_active=True,
         )
         self.sector, _ = Sector.objects.get_or_create(nombre='Laboratorio')
+        self.responsable_operario, _ = Responsable.objects.get_or_create(
+            usuario=self.operario,
+            defaults={'nombre': 'Operario NC Test', 'activo': True},
+        )
         self.norma = NormaNC.objects.create(
             nombre='ISO 9001:2015',
             creado_por=self.calidad,
@@ -44,7 +48,7 @@ class NCRoleWorkflowTests(TestCase):
         payload = {
             'fecha': '2026-04-24',
             'sector': self.sector.pk,
-            'responsable': self.operario.pk,
+            'responsable': self.responsable_operario.pk,
             'id_muestra_lote': 'L-001',
             'parametro_afectado': 'Humedad',
             'norma': self.norma.pk,
@@ -61,7 +65,7 @@ class NCRoleWorkflowTests(TestCase):
     def test_calidad_puede_reenviar_nc_a_borrador(self):
         nc = NoConformidad.objects.create(
             sector=self.sector,
-            responsable=self.operario,
+            responsable=self.responsable_operario,
             norma=self.norma,
             punto_norma=self.punto_norma,
             descripcion='NC a revisar',
@@ -98,7 +102,7 @@ class NCRoleWorkflowTests(TestCase):
         response = self.client.post(reverse('nc:crear'), {
             'fecha': '2026-04-24',
             'sector': self.sector.pk,
-            'responsable': self.operario.pk,
+            'responsable': self.responsable_operario.pk,
             'norma': self.norma.pk,
             'punto_norma': punto_otra_norma.pk,
             'descripcion': 'Descripcion de prueba',
@@ -139,7 +143,7 @@ class NCRoleWorkflowTests(TestCase):
             fecha=date(2026, 5, 4),
             fecha_implementacion_accion=date(2026, 5, 10),
             sector=self.sector,
-            responsable=self.operario,
+            responsable=self.responsable_operario,
             norma=self.norma,
             punto_norma=self.punto_norma,
             descripcion='NC para validar fecha en edición',

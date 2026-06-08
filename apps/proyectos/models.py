@@ -1,7 +1,7 @@
 ﻿from django.db import models
 from django.utils import timezone
 from datetime import timedelta
-from apps.core.models import ModeloBase, Sector
+from apps.core.models import ModeloBase, Sector, Responsable
 from django.conf import settings
 
 
@@ -43,7 +43,7 @@ class Proyecto(ModeloBase):
     fecha_inicio = models.DateField()
     dias_ejecucion = models.PositiveIntegerField(help_text='Días de ejecución estimados')
     responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        Responsable, on_delete=models.PROTECT,
         related_name='proyectos_responsable'
     )
     estado = models.CharField(max_length=15, choices=EstadoProyecto, default=EstadoProyecto.POR_HACER)

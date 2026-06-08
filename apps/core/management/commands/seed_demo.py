@@ -13,14 +13,14 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.core.models import Sector
+from apps.core.models import Clasificacion, Responsable, Sector
 from apps.nc.models import (
     NoConformidad, CincoPorques,
     EstadoNC, PrioridadNC, ClasificacionNC, OrigenNC, EficaciaNC,
 )
 from apps.qr.models import QuejaReclamo, EstadoQR, TipoReclamo
 from apps.om.models import (
-    OportunidadMejora, EstadoOM, ClasificacionOM, RangoEvaluacion, EficaciaOM,
+    OportunidadMejora, EstadoOM, RangoEvaluacion, EficaciaOM,
 )
 from apps.proyectos.models import (
     Proyecto, Subtarea, EstadoProyecto, PrioridadProyecto, OrigenProyecto,
@@ -164,6 +164,17 @@ class Command(BaseCommand):
             return
 
         all_users = list(usuarios.values())
+        all_responsables = []
+        for u in all_users:
+            nombre = f'{u.first_name} {u.last_name}'.strip() or u.username
+            r, _ = Responsable.objects.get_or_create(
+                usuario=u,
+                defaults={'nombre': nombre, 'activo': True},
+            )
+            all_responsables.append(r)
+        clasificaciones = ['Mejora de Proceso', 'Innovación / Mejora Continua', 'Eficiencia Operativa', 'Calidad', 'Otro', 'General', 'Legacy']
+        for nombre in clasificaciones:
+            Clasificacion.objects.get_or_create(nombre=nombre, defaults={'activo': True})
 
         # ── No Conformidades ─────────────────────────────────────────────────
         self.stdout.write('Generando No Conformidades...')
@@ -190,7 +201,7 @@ class Command(BaseCommand):
         for i, (estado, prioridad, clasificacion, eficacia, hacer_5p) in enumerate(configs_nc):
             fecha_nc = rand_date(days_back=180)
             sector = random.choice(sectores)
-            responsable = random.choice(all_users)
+            responsable = random.choice(all_responsables)
             desc = DESCRIPCIONES_NC[i % len(DESCRIPCIONES_NC)]
 
             nc = NoConformidad.objects.create(
@@ -247,7 +258,7 @@ class Command(BaseCommand):
             qr = QuejaReclamo.objects.create(
                 fecha=fecha_qr,
                 sector=sector,
-                responsable=random.choice(all_users),
+                responsable=random.choice(all_responsables),
                 id_cliente_pedido=random.choice(CLIENTES_ID),
                 tipo_reclamo=tipo,
                 descripcion=DESCRIPCIONES_QR[i % len(DESCRIPCIONES_QR)],
@@ -268,14 +279,14 @@ class Command(BaseCommand):
         # ── Oportunidades de Mejora ──────────────────────────────────────────
         self.stdout.write('Generando Oportunidades de Mejora...')
         configs_om = [
-            (EstadoOM.CERRADA,          ClasificacionOM.MEJORA_PROCESO,  'alta',  RangoEvaluacion.TRES_MESES, EficaciaOM.EFICAZ),
-            (EstadoOM.EN_IMPLEMENTACION,ClasificacionOM.INNOVACION,      'media', RangoEvaluacion.SEIS_MESES, EficaciaOM.PENDIENTE),
-            (EstadoOM.APROBADA,         ClasificacionOM.EFICIENCIA,      'alta',  RangoEvaluacion.UN_MES,     EficaciaOM.PENDIENTE),
-            (EstadoOM.EN_REVISION,      ClasificacionOM.CALIDAD,         'baja',  RangoEvaluacion.TRES_MESES, EficaciaOM.PENDIENTE),
-            (EstadoOM.BORRADOR,         ClasificacionOM.OTRO,            'media', '',                          EficaciaOM.PENDIENTE),
-            (EstadoOM.CERRADA,          ClasificacionOM.MEJORA_PROCESO,  'alta',  RangoEvaluacion.SEIS_MESES, EficaciaOM.NO_EFICAZ),
-            (EstadoOM.EN_IMPLEMENTACION,ClasificacionOM.EFICIENCIA,      'media', RangoEvaluacion.TRES_MESES, EficaciaOM.PENDIENTE),
-            (EstadoOM.APROBADA,         ClasificacionOM.CALIDAD,         'alta',  RangoEvaluacion.UN_MES,     EficaciaOM.PENDIENTE),
+            (EstadoOM.CERRADA,          'Mejora de Proceso',         'alta',  RangoEvaluacion.TRES_MESES, EficaciaOM.EFICAZ),
+            (EstadoOM.EN_IMPLEMENTACION,'Innovación / Mejora Continua','media', RangoEvaluacion.SEIS_MESES, EficaciaOM.PENDIENTE),
+            (EstadoOM.APROBADA,         'Eficiencia Operativa',      'alta',  RangoEvaluacion.UN_MES,     EficaciaOM.PENDIENTE),
+            (EstadoOM.EN_REVISION,      'Calidad',                   'baja',  RangoEvaluacion.TRES_MESES, EficaciaOM.PENDIENTE),
+            (EstadoOM.BORRADOR,         'Otro',                      'media', '',                          EficaciaOM.PENDIENTE),
+            (EstadoOM.CERRADA,          'Mejora de Proceso',         'alta',  RangoEvaluacion.SEIS_MESES, EficaciaOM.NO_EFICAZ),
+            (EstadoOM.EN_IMPLEMENTACION,'Eficiencia Operativa',      'media', RangoEvaluacion.TRES_MESES, EficaciaOM.PENDIENTE),
+            (EstadoOM.APROBADA,         'Calidad',                   'alta',  RangoEvaluacion.UN_MES,     EficaciaOM.PENDIENTE),
         ]
 
         oms_creadas = []
@@ -286,7 +297,7 @@ class Command(BaseCommand):
             om = OportunidadMejora.objects.create(
                 fecha=fecha_om,
                 sector=sector,
-                responsable=random.choice(all_users),
+                responsable=random.choice(all_responsables),
                 descripcion=desc,
                 problema_a_mejorar=f'Ineficiencia detectada en área de {sector.nombre}: {desc[:60]}.',
                 beneficio_potencial=beneficio,
@@ -316,7 +327,7 @@ class Command(BaseCommand):
                 proveedor='Interno',
                 fecha_inicio=fecha_inicio,
                 dias_ejecucion=random.choice([30, 45, 60, 90]),
-                responsable=random.choice(all_users),
+                responsable=random.choice(all_responsables),
                 estado=estado,
                 origen=OrigenProyecto.INDEPENDIENTE,
             )

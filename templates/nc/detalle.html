@@ -76,7 +76,7 @@
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Folio</dt><dd class="font-mono font-bold">{{ nc.folio }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Fecha</dt><dd>{{ nc.fecha|date:"d/m/Y" }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Sector</dt><dd>{{ nc.sector.nombre|default:"—" }}</dd></div>
-        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Responsable</dt><dd>{{ nc.responsable.get_full_name|default:nc.responsable.username }}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Responsable</dt><dd>{{ nc.responsable.nombre|default:"—" }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">ID Muestra / Lote</dt><dd>{{ nc.id_muestra_lote|default:"—" }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Parámetro</dt><dd>{{ nc.parametro_afectado|default:"—" }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Norma</dt><dd>{{ nc.norma.nombre|default:"—" }}</dd></div>
@@ -87,7 +87,7 @@
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Eficacia</dt><dd class="font-medium {% if nc.eficacia == 'eficaz' %}text-success{% elif nc.eficacia == 'no_eficaz' %}text-danger{% else %}text-gray-500{% endif %}">{{ nc.get_eficacia_display }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Dias de cierre</dt><dd>{{ nc.dias_cierre|default:"—" }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Fecha implementación</dt><dd>{% if nc.fecha_implementacion_accion %}{{ nc.fecha_implementacion_accion|date:"d/m/Y" }}{% else %}—{% endif %}</dd></div>
-        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Responsable acción</dt><dd>{% if nc.responsable_accion %}{{ nc.responsable_accion.get_full_name|default:nc.responsable_accion.username }}{% else %}—{% endif %}</dd></div>
+        <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Responsable acción</dt><dd>{{ nc.responsable_accion.nombre|default:"—" }}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Rango reevaluación</dt><dd>{% if nc.rango_dias_reevaluacion %}{{ nc.rango_dias_reevaluacion }} dias{% else %}—{% endif %}</dd></div>
         <div><dt class="text-gray-400 text-xs uppercase tracking-wide">Fecha reevaluación</dt><dd>{% if nc.fecha_reevaluacion %}{{ nc.fecha_reevaluacion|date:"d/m/Y" }}{% else %}—{% endif %}</dd></div>
         {% if qr_relacionada %}<div class="col-span-2"><dt class="text-gray-400 text-xs uppercase tracking-wide">QyR asociada</dt><dd><a href="{% url 'qr:detalle' qr_relacionada.pk %}" class="text-primary hover:underline">{{ qr_relacionada.folio }}</a></dd></div>{% endif %}

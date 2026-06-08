@@ -23,7 +23,7 @@
         <div><dt class="form-label mb-0.5">Fecha</dt><dd class="text-gray-800">{{ qr.fecha|date:"d/m/Y" }}</dd></div>
         <div><dt class="form-label mb-0.5">Prioridad</dt><dd class="text-gray-800">{{ qr.get_prioridad_display }}</dd></div>
         <div><dt class="form-label mb-0.5">Clasificación</dt><dd class="text-gray-800">{{ qr.clasificacion|default:"—" }}</dd></div>
-        <div><dt class="form-label mb-0.5">Responsable</dt><dd class="text-gray-800">{{ qr.responsable.get_full_name|default:qr.responsable.username|default:"Sin asignar" }}</dd></div>
+        <div><dt class="form-label mb-0.5">Responsable</dt><dd class="text-gray-800">{{ qr.responsable.nombre|default:"Sin asignar" }}</dd></div>
         <div><dt class="form-label mb-0.5">Quién recibe</dt><dd class="text-gray-800">{{ qr.quien_recibe|default:"—" }}</dd></div>
         <div><dt class="form-label mb-0.5">Tiempo de respuesta</dt><dd class="text-gray-800">{% if qr.dias_resolucion %}{{ qr.dias_resolucion }} días{% else %}—{% endif %}</dd></div>
         <div><dt class="form-label mb-0.5">Fecha de cierre</dt><dd class="text-gray-800">{{ qr.fecha_cierre|date:"d/m/Y"|default:"—" }}</dd></div>

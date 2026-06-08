@@ -25,7 +25,7 @@ class QuejaReclamoForm(forms.ModelForm):
             }),
             'descripcion': forms.Textarea(attrs={'class': 'form-input', 'rows': 4, 'placeholder': 'Describí el reclamo del cliente...'}),
             'prioridad': forms.Select(attrs={'class': 'form-input'}),
-            'clasificacion': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Clasificación adicional (opcional)'}),
+            'clasificacion': forms.Select(attrs={'class': 'form-input'}),
             'nc_relacionada': forms.Select(attrs={'class': 'form-input'}),
             'om_asociada': forms.Select(attrs={'class': 'form-input'}),
             'responsable': forms.Select(attrs={'class': 'form-input'}),
@@ -41,8 +41,7 @@ class QuejaReclamoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from apps.accounts.models import Usuario
-        from apps.core.models import Sector
+        from apps.core.models import Sector, Clasificacion, Responsable
         from apps.nc.models import NoConformidad
         from apps.om.models import OportunidadMejora
 
@@ -50,7 +49,16 @@ class QuejaReclamoForm(forms.ModelForm):
         self.fields['sector'].empty_label = 'Seleccionar sector...'
         self.fields['sector'].required = False
 
-        self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
+        clasificaciones = [c.nombre for c in Clasificacion.objects.filter(activo=True).order_by('nombre')]
+        clasificacion_actual = (getattr(self.instance, 'clasificacion', '') or '').strip() if self.instance else ''
+        if clasificacion_actual and clasificacion_actual not in clasificaciones:
+            clasificaciones.append(clasificacion_actual)
+        self.fields['clasificacion'].choices = [('', 'Seleccionar clasificación...')] + [
+            (nombre, nombre) for nombre in clasificaciones
+        ]
+        self.fields['clasificacion'].required = False
+
+        self.fields['responsable'].queryset = Responsable.objects.filter(activo=True).order_by('nombre')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
 
         self.fields['nc_relacionada'].queryset = NoConformidad.objects.filter(eliminado=False).order_by('-fecha')

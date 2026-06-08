@@ -85,7 +85,7 @@
       <dl class="space-y-3 text-sm">
         <div>
           <dt class="form-label mb-0.5">Responsable</dt>
-          <dd>{{ ver.responsable.get_full_name|default:ver.responsable.username|default:"Sin asignar" }}</dd>
+          <dd>{{ ver.responsable.nombre|default:"Sin asignar" }}</dd>
         </div>
         <div>
           <dt class="form-label mb-0.5">Fecha realizada</dt>

@@ -5,9 +5,9 @@ from django.urls import reverse
 from django.core.management import call_command
 
 from apps.accounts.models import Usuario, Rol
-from apps.core.models import Sector
+from apps.core.models import Clasificacion, Responsable, Sector
 from apps.om.forms import OportunidadMejoraForm
-from apps.om.models import OportunidadMejora, EstadoOM, ClasificacionOM
+from apps.om.models import OportunidadMejora, EstadoOM
 
 
 class OMRoleWorkflowTests(TestCase):
@@ -26,14 +26,19 @@ class OMRoleWorkflowTests(TestCase):
             is_active=True,
         )
         self.sector, _ = Sector.objects.get_or_create(nombre='Produccion Balanceado')
+        self.clasificacion, _ = Clasificacion.objects.get_or_create(nombre='Calidad')
+        self.responsable_operario, _ = Responsable.objects.get_or_create(
+            usuario=self.operario,
+            defaults={'nombre': 'Operario OM Test', 'activo': True},
+        )
 
     def test_operario_crea_om_en_revision(self):
         self.client.login(username='om_operario', password='Operario1234!')
         payload = {
             'fecha': '2026-04-24',
             'sector': self.sector.pk,
-            'responsable': self.operario.pk,
-            'clasificacion': ClasificacionOM.CALIDAD,
+            'responsable': self.responsable_operario.pk,
+            'clasificacion': self.clasificacion.nombre,
             'descripcion': 'OM de prueba',
             'beneficio_potencial': 'media',
         }
@@ -45,8 +50,8 @@ class OMRoleWorkflowTests(TestCase):
     def test_calidad_rechaza_om(self):
         om = OportunidadMejora.objects.create(
             sector=self.sector,
-            responsable=self.operario,
-            clasificacion=ClasificacionOM.CALIDAD,
+            responsable=self.responsable_operario,
+            clasificacion=self.clasificacion.nombre,
             descripcion='OM para rechazo',
             beneficio_potencial='media',
             estado=EstadoOM.EN_REVISION,
@@ -66,8 +71,8 @@ class OMRoleWorkflowTests(TestCase):
         om = OportunidadMejora.objects.create(
             fecha=date(2026, 5, 2),
             sector=self.sector,
-            responsable=self.operario,
-            clasificacion=ClasificacionOM.CALIDAD,
+            responsable=self.responsable_operario,
+            clasificacion=self.clasificacion.nombre,
             descripcion='OM con fecha fija',
             beneficio_potencial='media',
             estado=EstadoOM.BORRADOR,

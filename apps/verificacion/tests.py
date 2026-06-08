@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.core.management import call_command
 
 from apps.accounts.models import Rol, Usuario
-from apps.core.models import Sector
+from apps.core.models import Responsable, Sector
 from apps.proyectos.models import OrigenProyecto, Proyecto
 from apps.verificacion.forms import VerificacionForm
 from apps.verificacion.models import EstadoVerificacion, VerificacionEficacia
@@ -21,11 +21,15 @@ class VerificacionWorkflowTests(TestCase):
             is_active=True,
         )
         self.sector, _ = Sector.objects.get_or_create(nombre='Laboratorio')
+        self.responsable_calidad, _ = Responsable.objects.get_or_create(
+            usuario=self.calidad,
+            defaults={'nombre': 'Calidad Verificacion Test', 'activo': True},
+        )
         self.proyecto = Proyecto.objects.create(
             nombre='Proyecto verificacion',
             sector=self.sector,
             prioridad='media',
-            responsable=self.calidad,
+            responsable=self.responsable_calidad,
             fecha_inicio=date(2026, 4, 1),
             dias_ejecucion=10,
             proveedor='Interno',
@@ -37,13 +41,13 @@ class VerificacionWorkflowTests(TestCase):
             proyecto=self.proyecto,
             fecha_cierre_proyecto=date(2026, 4, 11),
             fecha_objetivo=date(2026, 7, 10),
-            responsable=self.calidad,
+            responsable=self.responsable_calidad,
         )
 
     def test_no_eficaz_genera_nc_automatica(self):
         self.client.login(username='verif_calidad', password='Calidad1234!')
         response = self.client.post(reverse('verificacion:detalle', args=[self.ver.pk]), {
-            'responsable': self.calidad.pk,
+            'responsable': self.responsable_calidad.pk,
             'fecha_realizada': '2026-07-11',
             'estado': EstadoVerificacion.NO_EFICAZ,
             'resultado_descripcion': 'No se sostuvo la mejora.',

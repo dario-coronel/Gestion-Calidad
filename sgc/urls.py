@@ -22,11 +22,48 @@ from django.views.generic import TemplateView, RedirectView
 from django.views.static import serve
 from django.http import Http404
 import os
+import subprocess
+import sys
 
 _DOCS_ROOT = os.path.join(settings.BASE_DIR, 'docs_site')
 
+
+def _ensure_docs_site():
+    """Build MkDocs output lazily when docs_site is missing."""
+    index_file = os.path.join(_DOCS_ROOT, 'index.html')
+    if os.path.isfile(index_file):
+        return True
+
+    mkdocs_config = os.path.join(settings.BASE_DIR, 'mkdocs.yml')
+    if not os.path.isfile(mkdocs_config):
+        return False
+
+    try:
+        subprocess.run(
+            [
+                sys.executable,
+                '-m',
+                'mkdocs',
+                'build',
+                '--config-file',
+                mkdocs_config,
+                '--site-dir',
+                _DOCS_ROOT,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+    return os.path.isfile(index_file)
+
 def serve_docs(request, path):
     """Sirve el sitio MkDocs resolviendo index.html en directorios."""
+    if not _ensure_docs_site():
+        raise Http404('No se pudo generar la documentación. Ejecuta: python -m mkdocs build --clean')
+
     if not path or path.endswith('/'):
         path = path + 'index.html'
     full = os.path.join(_DOCS_ROOT, path)
@@ -57,6 +94,8 @@ urlpatterns = [
     path('notificaciones/', include('apps.notificaciones.urls')),
     path('reportes/', include('apps.reportes.urls')),
     path('backups/', include('apps.backups.urls')),
+    # Evita 404 cuando se accede sin slash final.
+    re_path(r'^docs$', RedirectView.as_view(url='/docs/', permanent=False)),
     # Documentación MkDocs servida internamente (resuelve index.html en directorios)
     re_path(r'^docs/(?P<path>.*)$', serve_docs),
 ]

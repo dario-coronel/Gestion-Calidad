@@ -20,7 +20,7 @@
       <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
         <div>
           <dt class="form-label mb-0.5">Clasificación</dt>
-          <dd class="text-gray-800">{{ om.get_clasificacion_display }}</dd>
+          <dd class="text-gray-800">{{ om.clasificacion|default:"—" }}</dd>
         </div>
         <div>
           <dt class="form-label mb-0.5">Sector</dt>
@@ -32,7 +32,7 @@
         </div>
         <div>
           <dt class="form-label mb-0.5">Responsable</dt>
-          <dd class="text-gray-800">{{ om.responsable.get_full_name|default:om.responsable.username|default:"Sin asignar" }}</dd>
+          <dd class="text-gray-800">{{ om.responsable.nombre|default:"Sin asignar" }}</dd>
         </div>
         <div>
           <dt class="form-label mb-0.5">Beneficio potencial</dt>

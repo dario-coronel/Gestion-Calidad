@@ -57,7 +57,7 @@ def proyecto_finalizado(sender, instance, created, **kwargs):
 
     if created or instance.estado != 'finalizado':
         return
-    if not instance.responsable_id:
+    if not instance.responsable_id or not instance.responsable.usuario_id:
         return
 
     try:
@@ -66,7 +66,7 @@ def proyecto_finalizado(sender, instance, created, **kwargs):
         url = ''
 
     crear_notificacion(
-        usuario=instance.responsable,
+        usuario=instance.responsable.usuario,
         tipo=TipoNotificacion.PROYECTO_VENCIDO,
         titulo=f'Proyecto finalizado: {instance.folio}',
         mensaje=f'El proyecto "{instance.nombre}" fue marcado como Finalizado. '
@@ -97,9 +97,9 @@ def verificacion_no_eficaz(sender, instance, created, **kwargs):
     )
 
     # También notificar al responsable del proyecto
-    if instance.proyecto.responsable_id:
+    if instance.proyecto.responsable_id and instance.proyecto.responsable.usuario_id:
         crear_notificacion(
-            usuario=instance.proyecto.responsable,
+            usuario=instance.proyecto.responsable.usuario,
             tipo=TipoNotificacion.VERIFICACION_EFICACIA,
             titulo=f'Verificación NO EFICAZ: {instance.proyecto.folio}',
             mensaje=f'La verificación del proyecto "{instance.proyecto.nombre}" resultó No Eficaz.',

@@ -1,6 +1,6 @@
 ﻿from django.db import models
 from django.utils import timezone
-from apps.core.models import ModeloBase, Sector
+from apps.core.models import ModeloBase, Sector, Responsable
 from django.conf import settings
 
 
@@ -30,7 +30,7 @@ class QuejaReclamo(ModeloBase):
         verbose_name='Sector de origen'
     )
     responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        Responsable, on_delete=models.PROTECT,
         related_name='qr_responsable'
     )
     id_cliente_pedido = models.CharField(max_length=100)

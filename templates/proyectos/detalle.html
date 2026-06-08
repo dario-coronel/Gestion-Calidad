@@ -33,7 +33,7 @@
         </div>
         <div>
           <dt class="form-label mb-0.5">Responsable</dt>
-          <dd class="text-gray-800">{{ proyecto.responsable.get_full_name|default:proyecto.responsable.username|default:"Sin asignar" }}</dd>
+          <dd class="text-gray-800">{{ proyecto.responsable.nombre|default:"Sin asignar" }}</dd>
         </div>
         <div>
           <dt class="form-label mb-0.5">Proveedor</dt>

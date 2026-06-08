@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar Clasificación — SGC{% endblock %}
+{% block page_title %}Eliminar Clasificación{% endblock %}
+
+{% block content %}
+<div class="max-w-md">
+  <div class="card space-y-4">
+    <p class="text-sm text-gray-700">
+      ¿Confirmar eliminación de la clasificación <strong>{{ clasificacion.nombre }}</strong>?
+      Esta acción no se puede deshacer.
+    </p>
+    <p class="text-xs text-red-500">
+      Si hay OMs o QRs asociadas a esta clasificación, la eliminación fallará.
+    </p>
+    <div class="flex gap-3">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger">Eliminar</button>
+      </form>
+      <a href="{% url 'core:clasificaciones_lista' %}" class="btn-secondary">Cancelar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

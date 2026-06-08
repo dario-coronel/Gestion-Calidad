@@ -64,10 +64,9 @@ class NoConformidadForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from apps.accounts.models import Usuario
+        from apps.core.models import Sector, Responsable
         from apps.qr.models import QuejaReclamo
         from apps.om.models import OportunidadMejora
-        from apps.core.models import Sector
         self.fields['sector'].queryset = Sector.objects.filter(activo=True).order_by('nombre')
         self.fields['sector'].empty_label = 'Seleccionar sector...'
         self.fields['sector'].required = False
@@ -77,9 +76,9 @@ class NoConformidadForm(forms.ModelForm):
         self.fields['punto_norma'].queryset = PuntoNormaNC.objects.none()
         self.fields['punto_norma'].empty_label = 'Seleccionar punto de la norma...'
         self.fields['punto_norma'].required = True
-        self.fields['responsable'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
+        self.fields['responsable'].queryset = Responsable.objects.filter(activo=True).order_by('nombre')
         self.fields['responsable'].empty_label = 'Seleccionar responsable...'
-        self.fields['responsable_accion'].queryset = Usuario.objects.filter(is_active=True).order_by('first_name')
+        self.fields['responsable_accion'].queryset = Responsable.objects.filter(activo=True).order_by('nombre')
         self.fields['responsable_accion'].empty_label = 'Seleccionar responsable de la acción...'
         self.fields['origen'].required = False
         self.fields['origen'].initial = OrigenNC.DIRECTO
