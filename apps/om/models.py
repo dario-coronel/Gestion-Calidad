@@ -8,7 +8,7 @@ from calendar import monthrange
 class EstadoOM(models.TextChoices):
     BORRADOR = 'borrador', 'Borrador'
     EN_REVISION = 'en_revision', 'En Revisión'
-    APROBADA = 'aprobada', 'Aprobada'
+    IMPLEMENTADA = 'implementada', 'Implementada'
     EN_IMPLEMENTACION = 'en_implementacion', 'En Implementación'
     CERRADA = 'cerrada', 'Cerrada'
     RECHAZADA = 'rechazada', 'Rechazada'
@@ -60,6 +60,11 @@ class OportunidadMejora(ModeloBase):
     fecha_implementacion = models.DateField('Fecha de implementación', null=True, blank=True)
     eficacia = models.CharField(
         max_length=10, choices=EficaciaOM, default=EficaciaOM.PENDIENTE
+    )
+    explicacion_eficacia = models.TextField(
+        'Explicación de eficacia',
+        blank=True,
+        help_text='Detalle de por qué la OM fue considerada eficaz.'
     )
     om_origen = models.ForeignKey(
         'self', on_delete=models.SET_NULL,

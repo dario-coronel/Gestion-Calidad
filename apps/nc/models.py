@@ -171,6 +171,11 @@ class NoConformidad(ModeloBase):
         max_length=10, choices=EficaciaNC, default=EficaciaNC.PENDIENTE,
         verbose_name='Eficacia de la acción'
     )
+    explicacion_eficacia = models.TextField(
+        blank=True,
+        verbose_name='Explicación de eficacia',
+        help_text='Detalle de por qué la acción fue considerada eficaz.'
+    )
 
     # Matriz de riesgo
     probabilidad = models.PositiveSmallIntegerField(null=True, blank=True, help_text='1-5')

@@ -23,6 +23,11 @@
   .riesgo-bajo  { color: #16a34a; font-weight: bold; }
   .riesgo-medio { color: #d97706; font-weight: bold; }
   .riesgo-alto  { color: #dc2626; font-weight: bold; }
+  .estado-chip { display: inline-block; padding: 2px 8px; border-radius: 999px;
+                 font-size: 10px; font-weight: bold; }
+  .estado-chip.eficaz { background: #dcfce7; color: #166534; }
+  .estado-chip.no-eficaz { background: #fee2e2; color: #991b1b; }
+  .estado-chip.pendiente { background: #e5e7eb; color: #374151; }
   .campo-texto { background: #f8f8f8; padding: 6px; border-radius: 4px; white-space: pre-wrap; }
   footer { margin-top: 24px; border-top: 1px solid #ddd; padding-top: 8px;
            font-size: 9px; color: #888; text-align: center; }
@@ -124,12 +129,22 @@
   <table>
     <tr>
       <td class="lbl">Estado de eficacia</td>
-      <td class="val">{{ nc.get_eficacia_display }}</td>
+      <td class="val">
+        {% if nc.eficacia == 'eficaz' %}<span class="estado-chip eficaz">Eficaz</span>
+        {% elif nc.eficacia == 'no_eficaz' %}<span class="estado-chip no-eficaz">No Eficaz</span>
+        {% else %}<span class="estado-chip pendiente">Pendiente</span>{% endif %}
+      </td>
     </tr>
     {% if nc.evidencia %}
     <tr>
       <td class="lbl">Evidencia</td>
       <td class="val">{{ nc.evidencia }}</td>
+    </tr>
+    {% endif %}
+    {% if nc.explicacion_eficacia %}
+    <tr>
+      <td class="lbl">Explicación de eficacia</td>
+      <td class="val">{{ nc.explicacion_eficacia }}</td>
     </tr>
     {% endif %}
   </table>

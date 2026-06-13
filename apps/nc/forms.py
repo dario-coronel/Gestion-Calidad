@@ -86,7 +86,7 @@ class NoConformidadForm(forms.ModelForm):
         self.fields['qr_relacionada'].empty_label = 'Seleccionar QyR...'
         self.fields['qr_relacionada'].required = False
         self.fields['om_relacionada'].queryset = OportunidadMejora.objects.filter(eliminado=False).order_by('-fecha')
-        self.fields['om_relacionada'].empty_label = 'Seleccionar OM...'
+        self.fields['om_relacionada'].empty_label = 'Seleccionar OM existente...'
         self.fields['om_relacionada'].required = False
 
         norma_id = self.data.get('norma') or getattr(self.instance, 'norma_id', None)
@@ -138,8 +138,9 @@ class NoConformidadForm(forms.ModelForm):
 
         if origen == OrigenNC.QR and not qr:
             self.add_error('qr_relacionada', 'Seleccioná la QyR asociada cuando el origen es Queja/Reclamo.')
+        # Puede crearse primero la NC y asociar la OM después, cuando exista.
         if origen == OrigenNC.OM and not om:
-            self.add_error('om_relacionada', 'Seleccioná la OM asociada cuando el origen es Oportunidad de Mejora.')
+            pass
         if not norma:
             self.add_error('norma', 'Seleccioná la norma asociada a la No Conformidad.')
         if not punto_norma:
@@ -232,14 +233,26 @@ class EficaciaForm(forms.ModelForm):
     """Formulario para que Calidad evalúe la eficacia de la acción correctiva."""
     class Meta:
         model = NoConformidad
-        fields = ['eficacia', 'evidencia']
+        fields = ['eficacia', 'explicacion_eficacia', 'evidencia']
         widgets = {
             'eficacia': forms.RadioSelect(attrs={'class': 'radio-group'}),
+            'explicacion_eficacia': forms.Textarea(attrs={
+                'class': 'form-input', 'rows': 3,
+                'placeholder': 'Explicá por qué la acción correctiva resultó eficaz...'
+            }),
             'evidencia': forms.Textarea(attrs={
                 'class': 'form-input', 'rows': 3,
                 'placeholder': 'Describí la evidencia que demuestra la eficacia...'
             }),
         }
+
+    def clean(self):
+        cleaned = super().clean()
+        eficacia = cleaned.get('eficacia')
+        explicacion = (cleaned.get('explicacion_eficacia') or '').strip()
+        if eficacia == EficaciaNC.EFICAZ and not explicacion:
+            self.add_error('explicacion_eficacia', 'Ingresá la explicación de por qué fue eficaz.')
+        return cleaned
 
 
 class AdjuntoNCForm(forms.ModelForm):

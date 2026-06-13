@@ -6,8 +6,8 @@ from django.core.management import call_command
 
 from apps.accounts.models import Usuario, Rol
 from apps.core.models import Clasificacion, Responsable, Sector
-from apps.om.forms import OportunidadMejoraForm
-from apps.om.models import OportunidadMejora, EstadoOM
+from apps.om.forms import OportunidadMejoraForm, EficaciaOMForm
+from apps.om.models import OportunidadMejora, EstadoOM, EficaciaOM
 
 
 class OMRoleWorkflowTests(TestCase):
@@ -82,3 +82,54 @@ class OMRoleWorkflowTests(TestCase):
 
         form = OportunidadMejoraForm(instance=om)
         self.assertIn('value="2026-05-02"', str(form['fecha']))
+
+    def test_form_edicion_carga_opciones_de_clasificacion(self):
+        Clasificacion.objects.get_or_create(nombre='Inocuidad')
+        om = OportunidadMejora.objects.create(
+            fecha=date(2026, 5, 3),
+            sector=self.sector,
+            responsable=self.responsable_operario,
+            clasificacion=self.clasificacion.nombre,
+            descripcion='OM para validar combo clasificación',
+            beneficio_potencial='media',
+            estado=EstadoOM.BORRADOR,
+            creado_por=self.operario,
+            actualizado_por=self.operario,
+        )
+
+        form = OportunidadMejoraForm(instance=om)
+        self.assertGreater(len(list(form.fields['clasificacion'].widget.choices)), 1)
+        self.assertIn('>Calidad<', str(form['clasificacion']))
+        self.assertIn('selected', str(form['clasificacion']))
+
+    def test_eficacia_om_exige_explicacion_si_es_eficaz(self):
+        om = OportunidadMejora.objects.create(
+            fecha=date(2026, 5, 2),
+            sector=self.sector,
+            responsable=self.responsable_operario,
+            clasificacion=self.clasificacion.nombre,
+            descripcion='OM para validar eficacia',
+            beneficio_potencial='media',
+            estado=EstadoOM.EN_IMPLEMENTACION,
+            creado_por=self.operario,
+            actualizado_por=self.operario,
+        )
+
+        form_invalido = EficaciaOMForm(data={
+            'eficacia': EficaciaOM.EFICAZ,
+            'explicacion_eficacia': '',
+            'evidencia': 'Implementación finalizada.',
+            'seguimiento': 'Seguimiento semanal.',
+            'fecha_implementacion': '2026-05-12',
+        }, instance=om)
+        self.assertFalse(form_invalido.is_valid())
+        self.assertIn('explicacion_eficacia', form_invalido.errors)
+
+        form_valido = EficaciaOMForm(data={
+            'eficacia': EficaciaOM.EFICAZ,
+            'explicacion_eficacia': 'Se cumplieron objetivos y no hubo reincidencias en el período de control.',
+            'evidencia': 'Indicadores de desempeño y registros operativos.',
+            'seguimiento': 'Seguimiento semanal.',
+            'fecha_implementacion': '2026-05-12',
+        }, instance=om)
+        self.assertTrue(form_valido.is_valid())

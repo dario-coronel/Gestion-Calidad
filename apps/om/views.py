@@ -12,7 +12,7 @@ from .forms import OportunidadMejoraForm, AdjuntoOMForm, EficaciaOMForm
 COLORES_ESTADO = {
     EstadoOM.BORRADOR:          'bg-gray-100 text-gray-700',
     EstadoOM.EN_REVISION:       'bg-warning/10 text-warning',
-    EstadoOM.APROBADA:          'bg-primary/10 text-primary',
+    EstadoOM.IMPLEMENTADA:      'bg-primary/10 text-primary',
     EstadoOM.EN_IMPLEMENTACION: 'bg-blue-50 text-blue-700',
     EstadoOM.CERRADA:           'bg-success/10 text-success',
     EstadoOM.RECHAZADA:         'bg-danger/10 text-danger',
@@ -149,8 +149,8 @@ def detalle(request, pk):
         elif accion == 'revision_calidad':
             decision = request.POST.get('decision')
             if decision == 'aprobar':
-                om.estado = EstadoOM.APROBADA
-                msg = 'OM aprobada por Calidad.'
+                om.estado = EstadoOM.IMPLEMENTADA
+                msg = 'OM implementada por Calidad.'
             elif decision == 'rechazar':
                 om.estado = EstadoOM.RECHAZADA
                 msg = 'OM rechazada por Calidad.'

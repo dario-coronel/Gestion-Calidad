@@ -3,7 +3,7 @@ from django.db.models import Count
 from django.shortcuts import render
 
 from apps.nc.models import EstadoNC, NoConformidad
-from apps.om.models import EficaciaOM, OportunidadMejora
+from apps.om.models import EficaciaOM, EstadoOM, OportunidadMejora
 from apps.proyectos.models import EstadoProyecto, Proyecto
 from apps.qr.models import EstadoQR, QuejaReclamo
 from apps.verificacion.models import EstadoVerificacion, VerificacionEficacia
@@ -21,6 +21,7 @@ def lista(request):
         'kpi_nc_abiertas': nc_qs.exclude(estado__in=[EstadoNC.CERRADA, EstadoNC.RECHAZADA]).count(),
         'kpi_qr_abiertas': qr_qs.exclude(estado__in=[EstadoQR.CERRADO, EstadoQR.RECHAZADO]).count(),
         'kpi_om_activas': om_qs.exclude(estado__in=['cerrada', 'rechazada']).count(),
+        'kpi_om_implementadas': om_qs.filter(estado=EstadoOM.IMPLEMENTADA).count(),
         'kpi_proyectos_activos': proyectos_qs.exclude(estado=EstadoProyecto.FINALIZADO).count(),
         'kpi_verificaciones_pendientes': ver_qs.filter(estado__in=[EstadoVerificacion.PENDIENTE, EstadoVerificacion.EN_REVISION]).count(),
         'ultimas_nc': nc_qs.order_by('-fecha')[:5],

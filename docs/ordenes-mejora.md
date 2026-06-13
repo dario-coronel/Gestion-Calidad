@@ -8,7 +8,7 @@ Una **Orden de Mejora (OM)** es una acción correctiva derivada de una No Confor
 
 - **Borrador** - Carga inicial
 - **En Revisión** - Pendiente de revisión de Calidad
-- **Aprobada** - Aprobada para avanzar
+- **Implementada** - Implementada para avanzar
 - **En Implementación** - Trabajo en curso
 - **Cerrada** - Gestión finalizada
 - **Rechazada** - Rechazada en revisión
@@ -56,7 +56,7 @@ Una **Orden de Mejora (OM)** es una acción correctiva derivada de una No Confor
 ## Flujo típico
 
 ```
-Borrador → En Revisión → Aprobada → En Implementación → Cerrada
+Borrador → En Revisión → Implementada → En Implementación → Cerrada
 ```
 
 ## Seguimiento de OM

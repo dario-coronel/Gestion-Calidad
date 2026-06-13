@@ -281,12 +281,12 @@ class Command(BaseCommand):
         configs_om = [
             (EstadoOM.CERRADA,          'Mejora de Proceso',         'alta',  RangoEvaluacion.TRES_MESES, EficaciaOM.EFICAZ),
             (EstadoOM.EN_IMPLEMENTACION,'Innovación / Mejora Continua','media', RangoEvaluacion.SEIS_MESES, EficaciaOM.PENDIENTE),
-            (EstadoOM.APROBADA,         'Eficiencia Operativa',      'alta',  RangoEvaluacion.UN_MES,     EficaciaOM.PENDIENTE),
+            (EstadoOM.IMPLEMENTADA,     'Eficiencia Operativa',      'alta',  RangoEvaluacion.UN_MES,     EficaciaOM.PENDIENTE),
             (EstadoOM.EN_REVISION,      'Calidad',                   'baja',  RangoEvaluacion.TRES_MESES, EficaciaOM.PENDIENTE),
             (EstadoOM.BORRADOR,         'Otro',                      'media', '',                          EficaciaOM.PENDIENTE),
             (EstadoOM.CERRADA,          'Mejora de Proceso',         'alta',  RangoEvaluacion.SEIS_MESES, EficaciaOM.NO_EFICAZ),
             (EstadoOM.EN_IMPLEMENTACION,'Eficiencia Operativa',      'media', RangoEvaluacion.TRES_MESES, EficaciaOM.PENDIENTE),
-            (EstadoOM.APROBADA,         'Calidad',                   'alta',  RangoEvaluacion.UN_MES,     EficaciaOM.PENDIENTE),
+            (EstadoOM.IMPLEMENTADA,     'Calidad',                   'alta',  RangoEvaluacion.UN_MES,     EficaciaOM.PENDIENTE),
         ]
 
         oms_creadas = []
@@ -377,7 +377,7 @@ class Command(BaseCommand):
                 )
 
         # 2 proyectos desde OM
-        oms_aprobadas = [om for om in oms_creadas if om.estado in [EstadoOM.APROBADA, EstadoOM.EN_IMPLEMENTACION]]
+        oms_aprobadas = [om for om in oms_creadas if om.estado in [EstadoOM.IMPLEMENTADA, EstadoOM.EN_IMPLEMENTACION]]
         for om in oms_aprobadas[:2]:
             fecha_inicio = om.fecha + timedelta(days=random.randint(5, 15))
             p = Proyecto.objects.create(

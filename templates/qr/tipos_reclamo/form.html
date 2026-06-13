@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} — SGC{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md">
+  <form method="post" class="card space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="form-label">Código interno *</label>
+      <input type="text" name="codigo" value="{{ tipo.codigo|default:'' }}"
+             class="form-input" placeholder="Ej: calidad_producto" required autofocus
+             {% if tipo and uso_count > 0 %}readonly{% endif %}>
+      {% if tipo and uso_count > 0 %}
+      <p class="text-xs text-amber-600 mt-1">Código bloqueado: este tipo está en uso en {{ uso_count }} QyR.</p>
+      {% else %}
+      <p class="text-xs text-gray-400 mt-1">Usá minúsculas y guiones bajos (se guarda tal cual).</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <label class="form-label">Nombre del tipo *</label>
+      <input type="text" name="nombre" value="{{ tipo.nombre|default:'' }}"
+             class="form-input" placeholder="Ej: Calidad del Producto en Destino" required>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <input type="checkbox" name="requiere_lote" id="id_requiere_lote" class="h-4 w-4 text-teal-600 border-gray-300 rounded"
+             {% if tipo.requiere_lote %}checked{% endif %}>
+      <label for="id_requiere_lote" class="text-sm text-gray-700">Este tipo requiere ID Muestra / LOTE</label>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <input type="checkbox" name="activo" id="id_activo" class="h-4 w-4 text-teal-600 border-gray-300 rounded"
+             {% if tipo %}{% if tipo.activo %}checked{% endif %}{% else %}checked{% endif %}>
+      <label for="id_activo" class="text-sm text-gray-700">Tipo activo</label>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn-primary">{{ accion }}</button>
+      <a href="{% url 'qr:tipos_reclamo_lista' %}" class="btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 
-from .models import QuejaReclamo, EstadoQR
+from .models import QuejaReclamo, EstadoQR, TipoReclamoQR
 from .forms import QuejaReclamoForm, AdjuntoQRForm
 from apps.om.models import OportunidadMejora, EstadoOM
 
@@ -24,6 +24,16 @@ def _es_responsable_de_qr(user, qr):
         user.is_authenticated
         and qr.responsable_id
         and getattr(qr.responsable, 'usuario_id', None) == user.id
+    )
+
+
+def _puede_gestionar_tipos_reclamo(user):
+    return bool(
+        user.is_authenticated and (
+            getattr(user, 'es_admin', False)
+            or user.is_superuser
+            or user.has_perm('qr.change_tiporeclamoqr')
+        )
     )
 
 
@@ -133,7 +143,7 @@ def detalle(request, pk):
                         problema_a_mejorar=qr.descripcion,
                         beneficio_potencial=qr.prioridad,
                         clasificacion=qr.clasificacion or 'Calidad',
-                        estado=EstadoOM.APROBADA,
+                        estado=EstadoOM.IMPLEMENTADA,
                         creado_por=request.user,
                         actualizado_por=request.user,
                     )
@@ -194,6 +204,119 @@ def editar(request, pk):
         'titulo': f'Editar {qr.folio}',
         'accion': 'Guardar cambios',
         'qr': qr,
+    })
+
+
+@login_required
+def tipos_reclamo_lista(request):
+    if not _puede_gestionar_tipos_reclamo(request.user):
+        messages.error(request, 'Solo el administrador puede gestionar tipos de reclamo.')
+        return redirect('dashboard:index')
+    tipos = TipoReclamoQR.objects.all()
+    return render(request, 'qr/tipos_reclamo/lista.html', {'tipos': tipos})
+
+
+@login_required
+def tipo_reclamo_crear(request):
+    if not _puede_gestionar_tipos_reclamo(request.user):
+        messages.error(request, 'Solo el administrador puede gestionar tipos de reclamo.')
+        return redirect('qr:tipos_reclamo_lista')
+
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo', '').strip().lower()
+        nombre = request.POST.get('nombre', '').strip()
+        activo = request.POST.get('activo') == 'on'
+        requiere_lote = request.POST.get('requiere_lote') == 'on'
+
+        if not codigo or not nombre:
+            messages.error(request, 'Código y nombre son obligatorios.')
+        elif TipoReclamoQR.objects.filter(codigo__iexact=codigo).exists():
+            messages.error(request, f'Ya existe un tipo con código "{codigo}".')
+        elif TipoReclamoQR.objects.filter(nombre__iexact=nombre).exists():
+            messages.error(request, f'Ya existe un tipo con nombre "{nombre}".')
+        else:
+            TipoReclamoQR.objects.create(
+                codigo=codigo,
+                nombre=nombre,
+                activo=activo,
+                requiere_lote=requiere_lote,
+            )
+            messages.success(request, f'Tipo de reclamo "{nombre}" creado.')
+            return redirect('qr:tipos_reclamo_lista')
+
+    return render(request, 'qr/tipos_reclamo/form.html', {
+        'titulo': 'Nuevo Tipo de Reclamo',
+        'accion': 'Crear',
+    })
+
+
+@login_required
+def tipo_reclamo_editar(request, pk):
+    if not _puede_gestionar_tipos_reclamo(request.user):
+        messages.error(request, 'Solo el administrador puede gestionar tipos de reclamo.')
+        return redirect('qr:tipos_reclamo_lista')
+
+    tipo = get_object_or_404(TipoReclamoQR, pk=pk)
+    uso_count = QuejaReclamo.objects.filter(eliminado=False, tipo_reclamo=tipo.codigo).count()
+
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo', '').strip().lower()
+        nombre = request.POST.get('nombre', '').strip()
+        activo = request.POST.get('activo') == 'on'
+        requiere_lote = request.POST.get('requiere_lote') == 'on'
+
+        if not codigo or not nombre:
+            messages.error(request, 'Código y nombre son obligatorios.')
+        elif uso_count > 0 and codigo != tipo.codigo:
+            messages.error(
+                request,
+                f'No se puede cambiar el código porque este tipo está en uso en {uso_count} QyR. Podés editar nombre, estado activo y requisito de lote.'
+            )
+        elif TipoReclamoQR.objects.filter(codigo__iexact=codigo).exclude(pk=tipo.pk).exists():
+            messages.error(request, f'Ya existe otro tipo con código "{codigo}".')
+        elif TipoReclamoQR.objects.filter(nombre__iexact=nombre).exclude(pk=tipo.pk).exists():
+            messages.error(request, f'Ya existe otro tipo con nombre "{nombre}".')
+        else:
+            tipo.codigo = codigo
+            tipo.nombre = nombre
+            tipo.activo = activo
+            tipo.requiere_lote = requiere_lote
+            tipo.save()
+            messages.success(request, f'Tipo de reclamo "{nombre}" actualizado.')
+            return redirect('qr:tipos_reclamo_lista')
+
+    return render(request, 'qr/tipos_reclamo/form.html', {
+        'titulo': f'Editar Tipo: {tipo.nombre}',
+        'accion': 'Guardar cambios',
+        'tipo': tipo,
+        'uso_count': uso_count,
+    })
+
+
+@login_required
+def tipo_reclamo_eliminar(request, pk):
+    if not _puede_gestionar_tipos_reclamo(request.user):
+        messages.error(request, 'Solo el administrador puede gestionar tipos de reclamo.')
+        return redirect('qr:tipos_reclamo_lista')
+
+    tipo = get_object_or_404(TipoReclamoQR, pk=pk)
+    uso_count = QuejaReclamo.objects.filter(eliminado=False, tipo_reclamo=tipo.codigo).count()
+
+    if request.method == 'POST':
+        if uso_count > 0:
+            messages.error(
+                request,
+                f'No se puede eliminar "{tipo.nombre}" porque está en uso en {uso_count} QyR. Desactivalo desde edición.'
+            )
+            return redirect('qr:tipo_reclamo_editar', pk=tipo.pk)
+        nombre = tipo.nombre
+        tipo.delete()
+        messages.success(request, f'Tipo de reclamo "{nombre}" eliminado.')
+        return redirect('qr:tipos_reclamo_lista')
+
+    return render(request, 'qr/tipos_reclamo/confirmar_eliminar.html', {
+        'tipo': tipo,
+        'uso_count': uso_count,
     })
 
 

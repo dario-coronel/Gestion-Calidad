@@ -20,6 +20,22 @@ class TipoReclamo(models.TextChoices):
     OTRO = 'otro', 'Otro'
 
 
+class TipoReclamoQR(models.Model):
+    """Catálogo dinámico de tipos de reclamo para QyR."""
+    codigo = models.CharField(max_length=50, unique=True)
+    nombre = models.CharField(max_length=150, unique=True)
+    activo = models.BooleanField(default=True)
+    requiere_lote = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = 'Tipo de Reclamo'
+        verbose_name_plural = 'Tipos de Reclamo'
+
+    def __str__(self):
+        return self.nombre
+
+
 class QuejaReclamo(ModeloBase):
     """Queja o Reclamo de cliente. No incluye 5 Porqués ni Matriz de Riesgo."""
     folio = models.CharField(max_length=20, unique=True, editable=False)
@@ -35,7 +51,7 @@ class QuejaReclamo(ModeloBase):
     )
     id_cliente_pedido = models.CharField(max_length=100)
     id_muestra_lote = models.CharField('ID Muestra / LOTE', max_length=100, blank=True)
-    tipo_reclamo = models.CharField(max_length=30, choices=TipoReclamo)
+    tipo_reclamo = models.CharField(max_length=50)
     descripcion = models.TextField()
     prioridad = models.CharField(
         max_length=10,
@@ -72,6 +88,13 @@ class QuejaReclamo(ModeloBase):
 
     def __str__(self):
         return f'{self.folio} - {self.id_cliente_pedido}'
+
+    def get_tipo_reclamo_display(self):
+        tipo = TipoReclamoQR.objects.filter(codigo=self.tipo_reclamo).only('nombre').first()
+        if tipo:
+            return tipo.nombre
+        legacy_labels = dict(TipoReclamo.choices)
+        return legacy_labels.get(self.tipo_reclamo, self.tipo_reclamo)
 
     def save(self, *args, **kwargs):
         if not self.folio:

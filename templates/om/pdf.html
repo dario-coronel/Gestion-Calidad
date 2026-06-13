@@ -22,8 +22,11 @@
   td.val { color: #111; }
   .campo-texto { background: #f8f8f8; padding: 8px; border-radius: 4px;
                  white-space: pre-wrap; border-left: 3px solid #c8e6e4; }
-  .eficaz    { color: #16a34a; font-weight: bold; }
-  .no-eficaz { color: #dc2626; font-weight: bold; }
+  .estado-chip { display: inline-block; padding: 2px 8px; border-radius: 999px;
+                 font-size: 10px; font-weight: bold; }
+  .estado-chip.eficaz { background: #dcfce7; color: #166534; }
+  .estado-chip.no-eficaz { background: #fee2e2; color: #991b1b; }
+  .estado-chip.pendiente { background: #e5e7eb; color: #374151; }
   footer { margin-top: 24px; border-top: 1px solid #ddd; padding-top: 8px;
            font-size: 9px; color: #888; text-align: center; }
 </style>
@@ -73,9 +76,9 @@
       <td class="val">{{ om.fecha_implementacion|date:"d/m/Y"|default:"—" }}</td>
       <td class="lbl">Eficacia</td>
       <td class="val">
-        {% if om.eficacia == 'eficaz' %}<span class="eficaz">Eficaz</span>
-        {% elif om.eficacia == 'no_eficaz' %}<span class="no-eficaz">No Eficaz</span>
-        {% else %}Pendiente{% endif %}
+        {% if om.eficacia == 'eficaz' %}<span class="estado-chip eficaz">Eficaz</span>
+        {% elif om.eficacia == 'no_eficaz' %}<span class="estado-chip no-eficaz">No Eficaz</span>
+        {% else %}<span class="estado-chip pendiente">Pendiente</span>{% endif %}
       </td>
     </tr>
     <tr>
@@ -101,8 +104,8 @@
 </div>
 {% endif %}
 
-{# ── SECCIÓN 4: Seguimiento y evidencia ── #}
-{% if om.seguimiento or om.evidencia %}
+{# ── SECCIÓN 4: Seguimiento, evidencia y explicación de eficacia ── #}
+{% if om.seguimiento or om.evidencia or om.explicacion_eficacia %}
 <div class="section">
   <div class="section-title">4. Seguimiento y Evidencia</div>
   {% if om.seguimiento %}
@@ -111,7 +114,11 @@
   {% endif %}
   {% if om.evidencia %}
   <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Evidencia</p>
-  <div class="campo-texto">{{ om.evidencia }}</div>
+  <div class="campo-texto" style="margin-bottom:10px">{{ om.evidencia }}</div>
+  {% endif %}
+  {% if om.explicacion_eficacia %}
+  <p style="font-weight:bold;font-size:10px;margin-bottom:4px;color:#444">Explicación de eficacia</p>
+  <div class="campo-texto">{{ om.explicacion_eficacia }}</div>
   {% endif %}
 </div>
 {% endif %}

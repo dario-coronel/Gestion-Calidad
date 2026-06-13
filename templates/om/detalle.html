@@ -91,6 +91,13 @@
         <dd class="text-sm text-gray-800 whitespace-pre-line bg-green-50 rounded p-3">{{ om.evidencia }}</dd>
       </div>
       {% endif %}
+
+      {% if om.explicacion_eficacia %}
+      <div>
+        <dt class="form-label mb-0.5">Explicación de eficacia</dt>
+        <dd class="text-sm text-gray-800 whitespace-pre-line bg-emerald-50 rounded p-3">{{ om.explicacion_eficacia }}</dd>
+      </div>
+      {% endif %}
     </div>
 
     {% if om.om_generadas.exists %}
@@ -174,6 +181,10 @@
         <div>
           <label class="form-label text-xs">Evidencia</label>
           {{ eficacia_form.evidencia }}
+        </div>
+        <div>
+          <label class="form-label text-xs">Explicación de eficacia</label>
+          {{ eficacia_form.explicacion_eficacia }}
         </div>
         <div>
           <label class="form-label text-xs">Seguimiento</label>

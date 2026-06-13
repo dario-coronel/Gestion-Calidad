@@ -154,7 +154,7 @@ def index(request):
         'kpi_proyectos_finalizados': proyectos_qs.filter(estado=EstadoProyecto.FINALIZADO).count(),
         'kpi_total_om': om_period_qs.count(),
         'kpi_om_abiertas': om_abiertas,
-        'kpi_om_cerradas': om_period_qs.filter(estado=EstadoOM.CERRADA).count(),
+        'kpi_om_implementadas': om_period_qs.filter(estado=EstadoOM.IMPLEMENTADA).count(),
         'estado_labels_json': json.dumps(estado_labels),
         'estado_data_json': json.dumps(estado_data),
         'qr_estado_labels_json': json.dumps(qr_estado_labels),

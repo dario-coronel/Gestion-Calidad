@@ -103,6 +103,7 @@
         {% endif %}
         {% if nc.notificar_cliente %}<div class="col-span-2"><dt class="text-gray-400 text-xs uppercase tracking-wide">Notificación cliente</dt><dd class="text-blue-600">{{ nc.email_cliente }}</dd></div>{% endif %}
         {% if nc.evidencia %}<div class="col-span-2"><dt class="text-gray-400 text-xs uppercase tracking-wide mb-1">Evidencia</dt><dd class="text-gray-700 bg-green-50 px-3 py-2 rounded">{{ nc.evidencia }}</dd></div>{% endif %}
+        {% if nc.explicacion_eficacia %}<div class="col-span-2"><dt class="text-gray-400 text-xs uppercase tracking-wide mb-1">Explicación de eficacia</dt><dd class="text-gray-700 bg-emerald-50 px-3 py-2 rounded whitespace-pre-line">{{ nc.explicacion_eficacia }}</dd></div>{% endif %}
       </dl>
     </div>
     {% if nc.nc_generadas.exists %}
@@ -310,6 +311,10 @@
           <div>
             <label class="form-label">Evidencia</label>
             {{ eficacia_form.evidencia }}
+          </div>
+          <div>
+            <label class="form-label">Explicación de eficacia</label>
+            {{ eficacia_form.explicacion_eficacia }}
           </div>
         </div>
         <button type="submit" class="mt-3 btn-primary text-xs w-full justify-center">Guardar evaluación</button>

@@ -1,9 +1,18 @@
 from django import forms
 from django.conf import settings
-from .models import QuejaReclamo, AdjuntoQR, TipoReclamo
+from .models import QuejaReclamo, AdjuntoQR, TipoReclamo, TipoReclamoQR
 
 
 class QuejaReclamoForm(forms.ModelForm):
+    tipo_reclamo = forms.ChoiceField(
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-input'}),
+    )
+    clasificacion = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-input'}),
+    )
+
     class Meta:
         model = QuejaReclamo
         fields = [
@@ -17,7 +26,6 @@ class QuejaReclamoForm(forms.ModelForm):
             'fecha': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
             'sector': forms.Select(attrs={'class': 'form-input'}),
             'id_cliente_pedido': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: CLI-001 / PED-2026-042'}),
-            'tipo_reclamo': forms.Select(attrs={'class': 'form-input'}),
             'id_muestra_lote': forms.TextInput(attrs={
                 'class': 'form-input',
                 'placeholder': 'Seleccionar o ingresar LOTE...',
@@ -25,7 +33,6 @@ class QuejaReclamoForm(forms.ModelForm):
             }),
             'descripcion': forms.Textarea(attrs={'class': 'form-input', 'rows': 4, 'placeholder': 'Describí el reclamo del cliente...'}),
             'prioridad': forms.Select(attrs={'class': 'form-input'}),
-            'clasificacion': forms.Select(attrs={'class': 'form-input'}),
             'nc_relacionada': forms.Select(attrs={'class': 'form-input'}),
             'om_asociada': forms.Select(attrs={'class': 'form-input'}),
             'responsable': forms.Select(attrs={'class': 'form-input'}),
@@ -48,6 +55,15 @@ class QuejaReclamoForm(forms.ModelForm):
         self.fields['sector'].queryset = Sector.objects.filter(activo=True).order_by('nombre')
         self.fields['sector'].empty_label = 'Seleccionar sector...'
         self.fields['sector'].required = False
+
+        tipos_activos = list(TipoReclamoQR.objects.filter(activo=True).order_by('nombre').values_list('codigo', 'nombre'))
+        tipos_requiere_lote = list(TipoReclamoQR.objects.filter(activo=True, requiere_lote=True).order_by('codigo').values_list('codigo', flat=True))
+        tipo_actual = (getattr(self.instance, 'tipo_reclamo', '') or '').strip() if self.instance else ''
+        if tipo_actual and tipo_actual not in {codigo for codigo, _ in tipos_activos}:
+            tipo_legacy = TipoReclamoQR.objects.filter(codigo=tipo_actual).values_list('nombre', flat=True).first()
+            tipos_activos.append((tipo_actual, tipo_legacy or dict(TipoReclamo.choices).get(tipo_actual, tipo_actual)))
+        self.fields['tipo_reclamo'].choices = [('', 'Seleccionar tipo de reclamo...')] + tipos_activos
+        self.fields['tipo_reclamo'].widget.attrs['data-requiere-lote-codigos'] = ','.join(tipos_requiere_lote)
 
         clasificaciones = [c.nombre for c in Clasificacion.objects.filter(activo=True).order_by('nombre')]
         clasificacion_actual = (getattr(self.instance, 'clasificacion', '') or '').strip() if self.instance else ''
@@ -102,10 +118,13 @@ class QuejaReclamoForm(forms.ModelForm):
         if tipo in required_types and not nc:
             self.add_error('nc_relacionada', 'Este tipo de reclamo requiere una NC asociada.')
 
-        if tipo == TipoReclamo.CALIDAD_PRODUCTO and not lote:
+        tipo_obj = TipoReclamoQR.objects.filter(codigo=tipo).only('requiere_lote').first() if tipo else None
+        requiere_lote = bool(tipo_obj.requiere_lote) if tipo_obj else tipo == TipoReclamo.CALIDAD_PRODUCTO
+
+        if requiere_lote and not lote:
             self.add_error('id_muestra_lote', 'Para Calidad del Producto en Destino debés indicar el LOTE.')
 
-        if tipo != TipoReclamo.CALIDAD_PRODUCTO:
+        if not requiere_lote:
             cleaned['id_muestra_lote'] = ''
         else:
             cleaned['id_muestra_lote'] = lote

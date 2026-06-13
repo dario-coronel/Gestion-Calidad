@@ -6,8 +6,9 @@ from django.core.management import call_command
 
 from apps.accounts.models import Usuario, Rol
 from apps.core.models import Responsable, Sector
-from apps.nc.forms import NoConformidadForm
-from apps.nc.models import NoConformidad, EstadoNC, ClasificacionNC, NormaNC, PuntoNormaNC
+from apps.nc.forms import NoConformidadForm, EficaciaForm
+from apps.nc.models import NoConformidad, EstadoNC, ClasificacionNC, NormaNC, PuntoNormaNC, EficaciaNC
+from apps.om.models import OportunidadMejora, EstadoOM
 
 
 class NCRoleWorkflowTests(TestCase):
@@ -156,3 +157,86 @@ class NCRoleWorkflowTests(TestCase):
         form = NoConformidadForm(instance=nc)
         self.assertIn('value="2026-05-04"', str(form['fecha']))
         self.assertIn('value="2026-05-10"', str(form['fecha_implementacion_accion']))
+
+    def test_operario_puede_asociar_om_existente_desde_formulario_nc(self):
+        om = OportunidadMejora.objects.create(
+            fecha=date(2026, 4, 1),
+            sector=self.sector,
+            responsable=self.responsable_operario,
+            descripcion='OM existente para asociar a NC',
+            clasificacion='Calidad',
+            estado=EstadoOM.IMPLEMENTADA,
+            creado_por=self.calidad,
+            actualizado_por=self.calidad,
+        )
+
+        self.client.login(username='nc_operario', password='Operario1234!')
+        response = self.client.post(reverse('nc:crear'), {
+            'fecha': '2026-04-24',
+            'sector': self.sector.pk,
+            'responsable': self.responsable_operario.pk,
+            'id_muestra_lote': 'L-002',
+            'parametro_afectado': 'Proteina',
+            'norma': self.norma.pk,
+            'punto_norma': self.punto_norma.pk,
+            'descripcion': 'NC con OM asociada',
+            'prioridad': 'media',
+            'clasificacion': ClasificacionNC.PROCESO,
+            'origen': 'directo',
+            'om_relacionada': om.pk,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        nc = NoConformidad.objects.latest('id')
+        self.assertEqual(nc.om_relacionada_id, om.pk)
+
+    def test_operario_puede_crear_nc_con_origen_om_sin_om_asociada(self):
+        self.client.login(username='nc_operario', password='Operario1234!')
+        response = self.client.post(reverse('nc:crear'), {
+            'fecha': '2026-04-25',
+            'sector': self.sector.pk,
+            'responsable': self.responsable_operario.pk,
+            'id_muestra_lote': 'L-003',
+            'parametro_afectado': 'Cenizas',
+            'norma': self.norma.pk,
+            'punto_norma': self.punto_norma.pk,
+            'descripcion': 'NC origen OM, sin OM al momento de crear',
+            'prioridad': 'media',
+            'clasificacion': ClasificacionNC.PROCESO,
+            'origen': 'om',
+            'om_relacionada': '',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        nc = NoConformidad.objects.latest('id')
+        self.assertEqual(nc.origen, 'om')
+        self.assertIsNone(nc.om_relacionada)
+
+    def test_eficacia_nc_exige_explicacion_si_es_eficaz(self):
+        nc = NoConformidad.objects.create(
+            sector=self.sector,
+            responsable=self.responsable_operario,
+            norma=self.norma,
+            punto_norma=self.punto_norma,
+            descripcion='NC para validación de eficacia',
+            prioridad='media',
+            clasificacion=ClasificacionNC.PROCESO,
+            estado=EstadoNC.EN_IMPLEMENTACION,
+            creado_por=self.operario,
+            actualizado_por=self.operario,
+        )
+
+        form_invalido = EficaciaForm(data={
+            'eficacia': EficaciaNC.EFICAZ,
+            'explicacion_eficacia': '',
+            'evidencia': 'Se verificó implementación.',
+        }, instance=nc)
+        self.assertFalse(form_invalido.is_valid())
+        self.assertIn('explicacion_eficacia', form_invalido.errors)
+
+        form_valido = EficaciaForm(data={
+            'eficacia': EficaciaNC.EFICAZ,
+            'explicacion_eficacia': 'Se repitió el proceso sin desvíos durante 3 lotes consecutivos.',
+            'evidencia': 'Registros de control y acta de cierre.',
+        }, instance=nc)
+        self.assertTrue(form_valido.is_valid())

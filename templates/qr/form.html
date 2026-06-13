@@ -133,18 +133,24 @@
     const tipoSelect = document.getElementById('id_tipo_reclamo');
     const loteWrapper = document.getElementById('id_muestra_lote_wrapper');
     const loteSelect = document.getElementById('id_id_muestra_lote');
+    const requiereLoteCodigos = new Set(
+      ((tipoSelect && tipoSelect.dataset.requiereLoteCodigos) || '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    );
 
     function syncMuestraLoteVisibility() {
       if (!tipoSelect || !loteWrapper || !loteSelect) return;
-      const isCalidadProducto = tipoSelect.value === 'calidad_producto';
-      loteSelect.required = isCalidadProducto;
-      if (!isCalidadProducto && !loteSelect.value) {
+      const requiereLote = requiereLoteCodigos.has(tipoSelect.value) || tipoSelect.value === 'calidad_producto';
+      loteSelect.required = requiereLote;
+      if (!requiereLote && !loteSelect.value) {
         loteSelect.value = '';
       }
 
       const help = document.getElementById('id_muestra_lote_help');
       if (help) {
-        help.textContent = isCalidadProducto
+        help.textContent = requiereLote
           ? 'Seleccioná o ingresá el LOTE correspondiente a la entrega.'
           : 'Este campo se usa cuando el tipo es Calidad del Producto en Destino.';
       }

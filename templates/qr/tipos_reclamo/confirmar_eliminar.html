@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar Tipo de Reclamo — SGC{% endblock %}
+{% block page_title %}Eliminar Tipo de Reclamo{% endblock %}
+
+{% block content %}
+<div class="max-w-md">
+  <div class="card space-y-4">
+    <p class="text-sm text-gray-700">
+      ¿Confirmar eliminación del tipo de reclamo <strong>{{ tipo.nombre }}</strong>?
+      Esta acción no se puede deshacer.
+    </p>
+    {% if uso_count > 0 %}
+    <p class="text-xs text-red-500">
+      Este tipo está en uso en <strong>{{ uso_count }}</strong> QyR. No se puede eliminar.
+      Podés desactivarlo desde la edición para que no aparezca en nuevas cargas.
+    </p>
+    {% else %}
+    <p class="text-xs text-red-500">
+      Si hay QyR asociadas a este tipo, la eliminación puede impactar la visualización histórica del nombre.
+    </p>
+    {% endif %}
+    <div class="flex gap-3">
+      {% if uso_count > 0 %}
+      <a href="{% url 'qr:tipo_reclamo_editar' tipo.pk %}" class="btn-primary">Ir a desactivar</a>
+      {% else %}
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger">Eliminar</button>
+      </form>
+      {% endif %}
+      <a href="{% url 'qr:tipos_reclamo_lista' %}" class="btn-secondary">Cancelar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

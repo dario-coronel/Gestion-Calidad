@@ -3,6 +3,11 @@ from .models import OportunidadMejora, AdjuntoOM, EficaciaOM
 
 
 class OportunidadMejoraForm(forms.ModelForm):
+    clasificacion = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-input'}),
+    )
+
     class Meta:
         model = OportunidadMejora
         fields = [
@@ -13,7 +18,6 @@ class OportunidadMejoraForm(forms.ModelForm):
         widgets = {
             'fecha': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
             'sector': forms.Select(attrs={'class': 'form-input'}),
-            'clasificacion': forms.Select(attrs={'class': 'form-input'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-input', 'rows': 4, 'placeholder': 'Describí la oportunidad o sugerencia de mejora...'}),
             'problema_a_mejorar': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Describí el problema o área a mejorar...'}),
             'beneficio_potencial': forms.Select(attrs={'class': 'form-input'}),
@@ -45,9 +49,13 @@ class OportunidadMejoraForm(forms.ModelForm):
 class EficaciaOMForm(forms.ModelForm):
     class Meta:
         model = OportunidadMejora
-        fields = ['eficacia', 'evidencia', 'seguimiento', 'fecha_implementacion']
+        fields = ['eficacia', 'explicacion_eficacia', 'evidencia', 'seguimiento', 'fecha_implementacion']
         widgets = {
             'eficacia': forms.RadioSelect(),
+            'explicacion_eficacia': forms.Textarea(attrs={
+                'class': 'form-input', 'rows': 3,
+                'placeholder': 'Explicá por qué la OM resultó eficaz...'
+            }),
             'evidencia': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Describí la evidencia de implementación...'}),
             'seguimiento': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Detalles del seguimiento realizado...'}),
             'fecha_implementacion': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input'}),
@@ -60,6 +68,14 @@ class EficaciaOMForm(forms.ModelForm):
         self.fields['fecha_implementacion'].localize = False
         self.fields['fecha_implementacion'].widget.is_localized = False
         self.fields['fecha_implementacion'].widget.format = '%Y-%m-%d'
+
+    def clean(self):
+        cleaned = super().clean()
+        eficacia = cleaned.get('eficacia')
+        explicacion = (cleaned.get('explicacion_eficacia') or '').strip()
+        if eficacia == EficaciaOM.EFICAZ and not explicacion:
+            self.add_error('explicacion_eficacia', 'Ingresá la explicación de por qué fue eficaz.')
+        return cleaned
 
 
 class AdjuntoOMForm(forms.ModelForm):

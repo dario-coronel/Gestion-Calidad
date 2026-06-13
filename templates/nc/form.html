@@ -112,9 +112,10 @@
           {% if form.qr_relacionada.errors %}<p class="mt-1 text-xs text-danger">{{ form.qr_relacionada.errors|join:", " }}</p>{% endif %}
         </div>
 
-        <div id="bloque_om" class="mt-3 hidden">
-          <label class="form-label">OM asociada <span class="text-danger">*</span></label>
+        <div id="bloque_om" class="mt-3">
+          <label class="form-label">OM asociada (existente)</label>
           {{ form.om_relacionada }}
+          <p class="mt-1 text-xs text-gray-400">Podés asociar una OM existente. Si el origen es Oportunidad de Mejora, este campo es obligatorio.</p>
           {% if form.om_relacionada.errors %}<p class="mt-1 text-xs text-danger">{{ form.om_relacionada.errors|join:", " }}</p>{% endif %}
         </div>
       </div>
@@ -276,12 +277,10 @@
   // ── Origen ──────────────────────────────────────────────
   var origenSel = document.getElementById('id_origen');
   var bloqueQR  = document.getElementById('bloque_qr');
-  var bloqueOM  = document.getElementById('bloque_om');
 
   function toggleOrigen() {
     var v = origenSel ? origenSel.value : '';
     bloqueQR.classList.toggle('hidden', v !== 'qr');
-    bloqueOM.classList.toggle('hidden', v !== 'om');
   }
   if (origenSel) {
     origenSel.addEventListener('change', toggleOrigen);

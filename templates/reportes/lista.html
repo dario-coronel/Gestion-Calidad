@@ -2,11 +2,12 @@
 {% block title %}Reportes — SGC{% endblock %}
 {% block page_title %}Reportes{% endblock %}
 {% block content %}
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mb-5">
 	<div class="card"><p class="text-xs text-gray-400 uppercase">NC abiertas</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_nc_abiertas }}</p></div>
 	<div class="card"><p class="text-xs text-gray-400 uppercase">QR abiertas</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_qr_abiertas }}</p></div>
-	<div class="card"><p class="text-xs text-gray-400 uppercase">OM activas</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_om_activas }}</p></div>
 	<div class="card"><p class="text-xs text-gray-400 uppercase">Proyectos activos</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_proyectos_activos }}</p></div>
+	<div class="card"><p class="text-xs text-gray-400 uppercase">OM abiertas</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_om_activas }}</p></div>
+	<div class="card"><p class="text-xs text-gray-400 uppercase">OM implementadas</p><p class="text-2xl font-semibold text-primary">{{ kpi_om_implementadas }}</p></div>
 	<div class="card"><p class="text-xs text-gray-400 uppercase">Verificaciones pendientes</p><p class="text-2xl font-semibold text-gray-800">{{ kpi_verificaciones_pendientes }}</p></div>
 </div>
 
